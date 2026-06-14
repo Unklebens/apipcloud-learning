@@ -2,13 +2,14 @@
 set -euo pipefail
 TOKEN=$(cat tokenfile)
 
-LOCAL_FILE="/mnt/c/Users/Fahim/Downloads/Samsung_Magician_Installer_Official_9.0.0.910.exe"
+LOCAL_FILE="$1"
 LOCAL_FILENAME=$(basename "$LOCAL_FILE")
 
 PROGRESS_HASH=$(uuidgen) # hash unique pour suivre la progression de l'upload
 TMPFILE=/tmp/$PROGRESS_HASH # fichier temporaire pour stocker la réponse de l'upload
 touch $TMPFILE
 
+#envoi du fichier en soit
 curl -fsSL \
   "https://eapi.pcloud.com/uploadfile" \
   -F "auth=$TOKEN" \
@@ -16,10 +17,10 @@ curl -fsSL \
   -F "progresshash=$PROGRESS_HASH" \
   -F "filename=$LOCAL_FILENAME" \
   -F "file=@$LOCAL_FILE" > "$TMPFILE" &
-UPLOAD_PID=$!  # PID du curl en background
+UPLOAD_PID=$!  # on recupère le PID du curl en background
 
 echo "transfering $LOCAL_FILENAME : $PROGRESS_HASH"
-sleep 2 # attendre un peu avant de vérifier la progression
+#sleep 2 # attendre un peu avant de vérifier la progression
 
 while kill -0 $UPLOAD_PID 2>/dev/null; do # tant que le processus d'upload est actif
   UPLOADPROGRESS=$(curl -fsSL -G "https://eapi.pcloud.com/uploadprogress" \
@@ -32,9 +33,11 @@ while kill -0 $UPLOAD_PID 2>/dev/null; do # tant que le processus d'upload est a
     echo "Transfer initiating"
     else
     TOTAL=$(echo $UPLOADPROGRESS | jq -r '.total')
+    TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
     UPLOADED=$(echo $UPLOADPROGRESS | jq -r '.uploaded')
+    UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
     PERCENTAGE=$((UPLOADED * 100 / TOTAL))
-    echo "Upload progress: $PERCENTAGE% ($UPLOADED/$TOTAL bytes)"
+    echo "Upload progress: $PERCENTAGE% ($UPLOADED_MB/$TOTAL_MB MB)"
   fi
   sleep 2
 done
