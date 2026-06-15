@@ -1,6 +1,6 @@
 # pcloud-backup
 
-Scripts shell pour uploader un fichier vers pCloud via leur API REST, avec suivi de progression en temps réel.
+Scripts shell pour uploader un ou plusieurs fichiers vers pCloud via leur API REST, avec suivi de progression en temps réel.
 
 Projet d'apprentissage DevOps — API REST, curl, bash, containers éphémères, Jenkins.
 
@@ -30,7 +30,7 @@ chmod 600 ~/.secret/pcloud.env
 
 Adapter le chemin dans `main.sh` si nécessaire :
 
-```bash
+```
 ENV_FILE="../homelab/.secret/pcloud.env"
 ```
 
@@ -41,18 +41,17 @@ ENV_FILE="../homelab/.secret/pcloud.env"
 ## Utilisation
 
 ```bash
-# Rendre les scripts exécutables
+# Rendre le script exécutable
 chmod +x main.sh
 
-# Lancer un upload
-LOCAL_FILE=/chemin/vers/fichier.tar.gz ./main.sh
-```
+# Uploader un fichier
+./main.sh /chemin/vers/fichier.tar.gz
 
-Ou en exportant la variable :
+# Uploader plusieurs fichiers
+./main.sh /chemin/vers/fichier1.tar.gz /chemin/vers/fichier2.tar.gz
 
-```bash
-export LOCAL_FILE=/chemin/vers/fichier.tar.gz
-./main.sh
+# Les noms de fichiers avec espaces doivent être entre guillemets
+./main.sh "/chemin/vers/mon fichier.tar.gz"
 ```
 
 ---
@@ -65,14 +64,17 @@ upload()  → upload du fichier avec suivi de progression en temps réel
 logout()  → invalidation du token
 ```
 
-La progression s'affiche toutes les 2 secondes via l'endpoint `uploadprogress` de l'API pCloud :
+Un seul login/logout pour tous les fichiers. La boucle affiche la progression globale :
 
 ```
+Transferring file 1/2
 transfering backup_20260614.tar.gz : a1b2c3d4-...
 Upload progress: 12% (734/6144 MB)
 Upload progress: 28% (1720/6144 MB)
 ...
 Upload OK → fileid: 92281279695
+Transferring file 2/2
+...
 ```
 
 ---
@@ -81,7 +83,7 @@ Upload OK → fileid: 92281279695
 
 ```
 pcloud-backup/
-├── main.sh         ← point d'entrée
+├── main.sh         ← point d'entrée, boucle sur les arguments
 ├── functions.sh    ← fonctions login / upload / logout
 └── README.md
 ```
@@ -94,7 +96,7 @@ pcloud-backup/
 - [x] Upload avec suivi de progression temps réel
 - [x] Gestion des erreurs curl et codes retour pCloud
 - [x] Paramétrage par variables d'environnement
+- [x] Upload de plusieurs fichiers en arguments
 - [ ] Containerisation avec `curlimages/curl`
 - [ ] POC cron sur dockerhost
 - [ ] Pipeline Jenkins
-
