@@ -15,18 +15,18 @@ function login(){
     fi
 
     #get a new token
-    RESPONSE=$(curl -fsSL -G \
+    local RESPONSE=$(curl -fsSL -G \
     "https://eapi.pcloud.com/login" \
     --data-urlencode "username=$PCLOUDUSER" \
     --data-urlencode "password=$PCLOUDPASS")
 
-    RESULT=$(echo $RESPONSE | jq -r '.result')
+    local RESULT=$(echo $RESPONSE | jq -r '.result')
 
     if [ "$RESULT" -eq 0 ]; then
-    TOKEN=$(echo $RESPONSE | jq -r '.auth')
+    local TOKEN=$(echo $RESPONSE | jq -r '.auth')
     echo "Token obtained : ${TOKEN:0:10}..."
     else
-    ERROR=$(echo $RESPONSE | jq -r '.error')
+    local ERROR=$(echo $RESPONSE | jq -r '.error')
     echo "Login failed → result: $RESULT | $ERROR"
     exit 1
     fi
@@ -40,13 +40,13 @@ function login(){
 }
 
 function upload() {
-    TOKEN=$(cat tokenfile)
+    local TOKEN=$(cat tokenfile)
+    local LOCAL_FILE="$1" #a charger depuis une vraiable d'environnement
+    echo "Uploading file: $LOCAL_FILE"
+    local LOCAL_FILENAME=$(basename "$LOCAL_FILE")
 
-    #LOCAL_FILE="$1" a charger depuis une vraiable d'environnement
-    LOCAL_FILENAME=$(basename "$LOCAL_FILE")
-
-    PROGRESS_HASH=$(uuidgen) # hash unique pour suivre la progression de l'upload
-    TMPFILE=/tmp/$PROGRESS_HASH # fichier temporaire pour stocker la réponse de l'upload
+    local PROGRESS_HASH=$(uuidgen) # hash unique pour suivre la progression de l'upload
+    local TMPFILE=/tmp/$PROGRESS_HASH # fichier temporaire pour stocker la réponse de l'upload
     touch $TMPFILE
 
     #envoi du fichier en soit
@@ -57,49 +57,49 @@ function upload() {
     -F "progresshash=$PROGRESS_HASH" \
     -F "filename=$LOCAL_FILENAME" \
     -F "file=@$LOCAL_FILE" > "$TMPFILE" &
-    UPLOAD_PID=$!  # on recupère le PID du curl en background
+    local UPLOAD_PID=$!  # on recupère le PID du curl en background
 
     echo "transfering $LOCAL_FILENAME : $PROGRESS_HASH"
     #sleep 2 # attendre un peu avant de vérifier la progression
 
     while kill -0 $UPLOAD_PID 2>/dev/null; do # tant que le processus d'upload est actif
-    UPLOADPROGRESS=$(curl -fsSL -G "https://eapi.pcloud.com/uploadprogress" \
+    local UPLOADPROGRESS=$(curl -fsSL -G "https://eapi.pcloud.com/uploadprogress" \
         --data-urlencode "auth=$TOKEN" \
         --data-urlencode "progresshash=$PROGRESS_HASH")
     
-    UPR=$(echo $UPLOADPROGRESS | jq -r '.result')
+    local UPR=$(echo $UPLOADPROGRESS | jq -r '.result')
 
     if [ "$UPR" -eq 1900 ]; then
         echo "Transfer initiating"
         else
-        TOTAL=$(echo $UPLOADPROGRESS | jq -r '.total')
-        TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
-        UPLOADED=$(echo $UPLOADPROGRESS | jq -r '.uploaded')
-        UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
-        PERCENTAGE=$((UPLOADED * 100 / TOTAL))
+        local TOTAL=$(echo $UPLOADPROGRESS | jq -r '.total')
+        local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
+        local UPLOADED=$(echo $UPLOADPROGRESS | jq -r '.uploaded')
+        local UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
+        local PERCENTAGE=$((UPLOADED * 100 / TOTAL))
         echo "Upload progress: $PERCENTAGE% ($UPLOADED_MB/$TOTAL_MB MB)"
     fi
     sleep 2
     done
 
     wait $UPLOAD_PID  # attend la fin proprement
-    CURL_EXIT=$?
+    local CURL_EXIT=$?
 
     if [ $CURL_EXIT -ne 0 ]; then
     echo "curl a échoué → exit code: $CURL_EXIT"
-    exit 1
+    return 1
     fi
     
-    RESPONSE=$(cat "$TMPFILE")
+    local RESPONSE=$(cat "$TMPFILE")
     rm -f "$TMPFILE"
 
-    RESULT=$(echo $RESPONSE | jq '.result')
+    local RESULT=$(echo $RESPONSE | jq '.result')
 
     if [ "$RESULT" -eq 0 ]; then
-    FILEID=$(echo $RESPONSE | jq '.fileids[0]')
+    local FILEID=$(echo $RESPONSE | jq '.fileids[0]')
     echo "Upload OK → fileid: $FILEID"
     else
-    ERROR=$(echo $RESPONSE | jq -r '.error')
+    local ERROR=$(echo $RESPONSE | jq -r '.error')
     echo "Upload KO → $ERROR"
     echo "---------------------------------"
     echo "Code	Description"
@@ -114,7 +114,7 @@ function upload() {
     echo "4000	Too many login tries from this IP address."
     echo "5000	Internal error. Try again later."
     echo "5001	Internal upload error."
-    exit 1
+    return 1
     fi
 
 }
@@ -122,19 +122,19 @@ function upload() {
 function logout() {
     if [ -f "tokenfile" ]
     then 
-        TOKEN=$(cat "tokenfile")
+        local TOKEN=$(cat "tokenfile")
     fi
 
-    LOGOUTREQ=$(curl -fsSL -G \
+    local LOGOUTREQ=$(curl -fsSL -G \
     "https://eapi.pcloud.com/logout" \
     --data-urlencode "auth=$TOKEN")
 
-    LOGOUTRESULT=$(echo $LOGOUTREQ | jq '.result')
+    local LOGOUTRESULT=$(echo $LOGOUTREQ | jq '.result')
     if [ "$LOGOUTRESULT" -eq 0 ]; then
     echo "Logout successful."
     rm -f "tokenfile"
     else
-    ERROR=$(echo $LOGOUTREQ | jq -r '.error')
+    local ERROR=$(echo $LOGOUTREQ | jq -r '.error')
     echo "Logout failed → $ERROR"
     fi
 }
