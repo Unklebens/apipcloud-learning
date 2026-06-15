@@ -17,11 +17,26 @@ else
     login
     TOTAL=$#
     COUNT=0
+    SUCCESS_FILES=()
+    FAIL_FILES=()
     for f in "$@"; do
         COUNT=$((COUNT + 1))
         echo "Transferring file $COUNT/$TOTAL"
         upload "$f"
+        if [ $? -eq 0 ]; then
+            SUCCESS_FILES+=("$f")
+        else
+            FAIL_FILES+=("$f")
+        fi
     done
+    echo "Upload terminé : ${#SUCCESS_FILES[@]} OK, ${#FAIL_FILES[@]} échoué(s)"
+
+    if [ ${#FAIL_FILES[@]} -gt 0 ]; then
+        echo "Fichiers échoués :"
+        for f in "${FAIL_FILES[@]}"; do
+            echo "  - $f"
+        done
+    fi
     logout
 fi
 
