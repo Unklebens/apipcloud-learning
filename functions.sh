@@ -5,15 +5,6 @@ function login(){
     exit 1
     fi
 
-    #check tokenfile
-    if [ -f "tokenfile" ]
-    then 
-        echo "tokenfile exist, removing it"
-        rm -f "tokenfile"
-    else
-        echo "tokenfile does not exist, continue"
-    fi
-
     #get a new token
     local RESPONSE=$(curl -fsSL -G \
     "https://eapi.pcloud.com/login" \
@@ -23,7 +14,7 @@ function login(){
     local RESULT=$(echo $RESPONSE | jq -r '.result')
 
     if [ "$RESULT" -eq 0 ]; then
-    local TOKEN=$(echo $RESPONSE | jq -r '.auth')
+    TOKEN=$(echo $RESPONSE | jq -r '.auth')
     echo "Token obtained : ${TOKEN:0:10}..."
     else
     local ERROR=$(echo $RESPONSE | jq -r '.error')
@@ -40,7 +31,6 @@ function login(){
 }
 
 function upload() {
-    local TOKEN=$(cat tokenfile)
     local LOCAL_FILE="$1" #a charger depuis une vraiable d'environnement
     echo "Uploading file: $LOCAL_FILE"
     local LOCAL_FILENAME=$(basename "$LOCAL_FILE")
@@ -120,11 +110,6 @@ function upload() {
 }
 
 function logout() {
-    if [ -f "tokenfile" ]
-    then 
-        local TOKEN=$(cat "tokenfile")
-    fi
-
     local LOGOUTREQ=$(curl -fsSL -G \
     "https://eapi.pcloud.com/logout" \
     --data-urlencode "auth=$TOKEN")
@@ -132,9 +117,19 @@ function logout() {
     local LOGOUTRESULT=$(echo $LOGOUTREQ | jq '.result')
     if [ "$LOGOUTRESULT" -eq 0 ]; then
     echo "Logout successful."
-    rm -f "tokenfile"
     else
     local ERROR=$(echo $LOGOUTREQ | jq -r '.error')
     echo "Logout failed → $ERROR"
     fi
+}
+
+function get_quota() {
+
+    local USERINFO=$(curl -fsSlG "https://eapi.pcloud.com/userinfo" \
+    --data-urlencode "auth=$TOKEN")
+    local QUOTA=$(echo $USERINFO | jq '.quota')
+    local QUOTA_MB=$(( QUOTA / 1024 / 1024 ))
+    local USEDQUOTA=$(echo $USERINFO | jq '.usedquota')
+    local USEDQUOTA_MB=$(( USEDQUOTA / 1024 / 1024 ))
+    echo "Quota: $USEDQUOTA_MB/$QUOTA_MB MB"
 }
