@@ -127,9 +127,11 @@ function get_quota() {
 
     local USERINFO=$(curl -fsSlG "https://eapi.pcloud.com/userinfo" \
     --data-urlencode "auth=$TOKEN")
-    local QUOTA=$(echo $USERINFO | jq '.quota')
+    QUOTA=$(echo $USERINFO | jq '.quota')
+    USEDQUOTA=$(echo $USERINFO | jq '.usedquota')
+    FREEQUOTA=$(( QUOTA - USEDQUOTA ))
+    FREEQUOTA_MB=$(( FREEQUOTA / 1024 / 1024 ))
     local QUOTA_MB=$(( QUOTA / 1024 / 1024 ))
-    local USEDQUOTA=$(echo $USERINFO | jq '.usedquota')
     local USEDQUOTA_MB=$(( USEDQUOTA / 1024 / 1024 ))
-    echo "Quota: $USEDQUOTA_MB/$QUOTA_MB MB"
+    echo "Quota: $USEDQUOTA_MB/$QUOTA_MB MB used, $FREEQUOTA_MB MB free"
 }

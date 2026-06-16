@@ -1,20 +1,19 @@
 # main.sh
 #!/bin/bash
-#set -euo pipefail on enlève ca car on le veut pas que le script s'arrête si une commande échoue, on veut juste afficher l'erreur et continuer
+
 ENV_FILE="../homelab/.secret/pcloud.env" #<-- fichier d'environnement contenant les variables d'environnement nécessaires
 #PCLOUDUSER=
 #PCLOUDPASS=
 source "$ENV_FILE"
 source functions.sh
 
-#: ${LOCAL_FILE:?"LOCAL_FILE est obligatoire"} #le check avant même d'appeler les fonctions
-
 if [ $# -lt 1 ]; then
-    echo "No arguments provided. Exiting."
+    echo "No file provided. Exiting."
     exit 1
 
 else 
     login
+    get_quota
     TOTAL=$#
     COUNT=0
     SUCCESS_FILES=()
@@ -22,9 +21,17 @@ else
     for f in "$@"; do
         COUNT=$((COUNT + 1))
         echo "Transferring file $COUNT/$TOTAL"
+        FILESIZE=$(du -b "$f" | cut -f1)
+        if [ $FILESIZE -gt $FREEQUOTA ]; then
+            FILESIZE_MB=$(( FILESIZE / 1024 / 1024 ))
+            echo "File $f is too large to upload ($FILESIZE_MB MB). Skipping."
+            FAIL_FILES+=("$f")
+            continue
+        fi
         upload "$f"
         if [ $? -eq 0 ]; then
             SUCCESS_FILES+=("$f")
+            FREEQUOTA=$((FREEQUOTA - FILESIZE))
         else
             FAIL_FILES+=("$f")
         fi
@@ -37,6 +44,7 @@ else
             echo "  - $f"
         done
     fi
+    get_quota
     logout
 fi
 
