@@ -1,52 +1,49 @@
 function login(){
     #Check sourcing
-    if [ -z "${PCLOUDPASS:-}" ]; then
-    echo "PCLOUDPASS non défini"
-    exit 1
-    fi
+    : ${${PCLOUDPASS:?non défini}
 
     #get a new token
     local RESPONSE=$(curl -fsSL -G \
     "https://eapi.pcloud.com/login" \
-    --data-urlencode "username=$PCLOUDUSER" \
-    --data-urlencode "password=$PCLOUDPASS")
+    --data-urlencode "username=${PCLOUDUSER:?Non define}" \
+    --data-urlencode "password=${PCLOUDPASS:?Non define}")
 
-    local RESULT=$(echo $RESPONSE | jq -r '.result')
+    local RESULT=$(echo ${RESPONSE} | jq -r '.result')
 
-    if [ "$RESULT" -eq 0 ]; then
+    [[ "$RESULT" -ne 0 ]] || {
+      local ERROR=$(echo $RESPONSE | jq -r '.error')
+      : ${EXCEPTION:?Login failed → result: $RESULT | $ERROR}    
+    }
     TOKEN=$(echo $RESPONSE | jq -r '.auth')
     echo "Token obtained : ${TOKEN:0:10}..."
-    else
-    local ERROR=$(echo $RESPONSE | jq -r '.error')
-    echo "Login failed → result: $RESULT | $ERROR"
-    exit 1
-    fi
 
     #store token
-    if [ ! -f "tokenfile" ]
-    then 
-        echo "$TOKEN" > "tokenfile"
+    local tokeFile="tokenfile"
+    if [[ ! -f ${tokeFile} ]]; then 
+        echo "$TOKEN" > "${tokeFile}"
+    else
+     : # Pas d'erreur  a remonter ?
     fi
 
 }
 
 function upload() {
-    local LOCAL_FILE="$1" #a charger depuis une vraiable d'environnement
-    echo "Uploading file: $LOCAL_FILE"
-    local LOCAL_FILENAME=$(basename "$LOCAL_FILE")
+    local LOCAL_FILE="${1}" #a charger depuis une vraiable d'environnement
+    echo "Uploading file: ${LOCAL_FILE}"
+    local LOCAL_FILENAME=$(basename "${LOCAL_FILE}")
 
     local PROGRESS_HASH=$(uuidgen) # hash unique pour suivre la progression de l'upload
     local TMPFILE=/tmp/$PROGRESS_HASH # fichier temporaire pour stocker la réponse de l'upload
-    touch $TMPFILE
+    touch ${TMPFILE}
 
     #envoi du fichier en soit
     curl -fsSL \
     "https://eapi.pcloud.com/uploadfile" \
-    -F "auth=$TOKEN" \
+    -F "auth=${TOKEN}" \
     -F "folderid=0" \
-    -F "progresshash=$PROGRESS_HASH" \
-    -F "filename=$LOCAL_FILENAME" \
-    -F "file=@$LOCAL_FILE" > "$TMPFILE" &
+    -F "progresshash=${PROGRESS_HASH}" \
+    -F "filename=${LOCAL_FILENAME}" \
+    -F "file=@${LOCAL_FILE}" > "${TMPFILE}" &
     local UPLOAD_PID=$!  # on recupère le PID du curl en background
 
     echo "transfering $LOCAL_FILENAME : $PROGRESS_HASH"
@@ -90,20 +87,22 @@ function upload() {
     echo "Upload OK → fileid: $FILEID"
     else
     local ERROR=$(echo $RESPONSE | jq -r '.error')
-    echo "Upload KO → $ERROR"
-    echo "---------------------------------"
-    echo "Code	Description"
-    echo "---------------------------------"
-    echo "1000	Log in required."
-    echo "2000	Log in failed."
-    echo "2001	Invalid file/folder name."
-    echo "2003	Access denied. You do not have permissions to preform this operation."
-    echo "2005	Directory does not exist."
-    echo "2008	User is over quota."
-    echo "2041	Connection broken."
-    echo "4000	Too many login tries from this IP address."
-    echo "5000	Internal error. Try again later."
-    echo "5001	Internal upload error."
+    cat << "EOF"
+Upload KO → $ERROR
+---------------------------------
+Code	Description
+---------------------------------
+1000	Log in required.
+2000	Log in failed.
+2001	Invalid file/folder name.
+2003	Access denied. You do not have permissions to preform this operation.
+2005	Directory does not exist.
+2008	User is over quota.
+2041	Connection broken.
+4000	Too many login tries from this IP address.
+5000	Internal error. Try again later.
+5001	Internal upload error.
+EOF
     return 1
     fi
 
