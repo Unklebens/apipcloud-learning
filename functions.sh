@@ -5,8 +5,8 @@ function login(){
     #get a new token
     local RESPONSE=$(curl -fsSL -G \
     "https://eapi.pcloud.com/login" \
-    --data-urlencode "username=${PCLOUDUSER:?Non define}" \
-    --data-urlencode "password=${PCLOUDPASS:?Non define}")
+    --data-urlencode "username=${PCLOUDUSER:?Non defini}" \
+    --data-urlencode "password=${PCLOUDPASS:?Non defini}")
 
     local RESULT=$(echo ${RESPONSE} | jq -r '.result')
 
@@ -31,7 +31,7 @@ function upload() {
     curl -fsSL \
     "https://eapi.pcloud.com/uploadfile" \
     -F "auth=${TOKEN}" \
-    -F "folderid=0" \
+    -F "folderid=${FOLDERID}" \
     -F "progresshash=${PROGRESS_HASH}" \
     -F "filename=${LOCAL_FILENAME}" \
     -F "file=@${LOCAL_FILE}" > "${TMPFILE}" &
@@ -111,7 +111,7 @@ function logout() {
 function get_quota() {
 
     local USERINFO="$(curl -fsSlG "https://eapi.pcloud.com/userinfo" \
-    --data-urlencode "auth=${TOKEN:?Non define}")"
+    --data-urlencode "auth=${TOKEN:?Non defini}")"
     QUOTA="$(jq '.quota' <<< "${USERINFO}")"
     USEDQUOTA="$(jq '.usedquota' <<< "${USERINFO}")"
     FREEQUOTA=$(( $QUOTA - $USEDQUOTA ))
@@ -119,4 +119,48 @@ function get_quota() {
     local QUOTA_MB=$(( $QUOTA / 1024 / 1024 ))
     local USEDQUOTA_MB=$(( $USEDQUOTA / 1024 / 1024 ))
     echo "Quota: ${USEDQUOTA_MB}/${QUOTA_MB} MB used, ${FREEQUOTA_MB} MB free"
+}
+
+function list_folder() {
+
+    local LISTFOLDER="$(curl -fsSLG "https://eapi.pcloud.com/listfolder" \
+    --data-urlencode "auth=${TOKEN:?Non defini}" \
+    --data-urlencode "folderid=${FOLDERID:?Non defini}")"
+    #echo "${LISTFOLDER}"
+
+    local RESULT="$(jq -r '.result' <<< "${LISTFOLDER}")"
+    [[ "$RESULT" -eq 0 ]] || {
+      local ERROR="$(jq -r '.error' <<< "${LISTFOLDER}")"
+      : ${EXCEPTION:?List folder failed → result: $RESULT | $ERROR}
+    }
+
+    FILECOUNT="$(jq -r '.metadata.contents | length' <<< "${LISTFOLDER}")"
+    echo "Folder ${FOLDERID} contains ${FILECOUNT} files."
+
+    FILESPRESENT=()
+    local FILELIST="$(jq -r '.metadata.contents | sort_by(.name) | .[] | select(.isfolder == false) | [.name, (.fileid | tostring)] | join(":")' <<< "${LISTFOLDER}")"
+    readarray -t FILESPRESENT <<< "${FILELIST}"
+
+    echo "Files present in folder ${FOLDERID}:"
+    for f in "${FILESPRESENT[@]}"; do
+        echo "  - $f"
+    done
+
+}
+
+function delete_file() {
+
+
+  local FTD=$(cut -d ':' -f 1 <<< "${1}?:Non defini") # nom du fichier à supprimer
+  local IDTD=$(cut -d ':' -f 2 <<< "${1}")
+  local FILEDELETION="$(curl -fsSLG "https://eapi.pcloud.com/deletefile" \
+    --data-urlencode "auth=${TOKEN:?Non defini}" \
+    --data-urlencode "fileid=${IDTD:?Non defini}")"
+
+    local RESULT="$(jq -r '.result' <<< "${FILEDELETION}")"
+    [[ "$RESULT" -eq 0 ]] && echo "File "${FTD}" deleted successfully." && FILESPRESENT=("${FILESPRESENT[@]}") || {
+      local ERROR="$(jq -r '.error' <<< "${FILEDELETION}")"
+      : ${EXCEPTION:?Delete file failed → result: $RESULT | $ERROR}
+    }
+
 }
