@@ -1,15 +1,14 @@
-#!/bin/bash # Pas certain, mais le sheebang doit être la premiere instruction
+#!/bin/bash 
 # main.sh
 
 ENV_FILE="../homelab/.secret/pcloud.env" #<-- fichier d'environnement contenant les variables d'environnement nécessaires
-: $[PCLOUDUSER;?variable non definie} # Leve une exception si la variable est absente
-: ${PCLOUDPASS;?variable non definie} # Leve une exception si la variable est absente
-[[ ! -f "${ENV_FILE}" ]] || : ${EXCEPTION:?{$ENV_FILE}: illisible ou absent}
+[ -f "${ENV_FILE}" ] && source "${ENV_FILE}"  # source si présent, sinon on suppose que les vars arrivent de l'environnement Docker
+source functions.sh || : ${EXCEPTION:?"functions.sh: illisible ou absent"}
 
-source "${ENV_FILE}" # la condition permet d'utiliser le script manuellement et dans le container qui aura des env
-source functions.sh || : ${EXCEPTION:?function.sh: illisible ou absent}
+: ${PCLOUDUSER:?variable non definie}  # vérifie après le source, peu importe d'où vient la variable
+: ${PCLOUDPASS:?variable non definie}
 
-[[ ${#} -ge 1 ]] || : ${EXCEPTION:?"No file provided. Exiting."}
+[[ ${#} -ge 1 ]] || : ${EXCEPTION:?"No file provided. Exiting."}
 
 login
 get_quota

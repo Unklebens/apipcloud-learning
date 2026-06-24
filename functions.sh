@@ -1,6 +1,6 @@
 function login(){
     #Check sourcing
-    : ${${PCLOUDPASS:?non défini}
+    : ${PCLOUDPASS:?non defini}
 
     #get a new token
     local RESPONSE=$(curl -fsSL -G \
@@ -10,21 +10,12 @@ function login(){
 
     local RESULT=$(echo ${RESPONSE} | jq -r '.result')
 
-    [[ "$RESULT" -ne 0 ]] || {
+    [[ "$RESULT" -eq 0 ]] || {
       local ERROR=$(echo $RESPONSE | jq -r '.error')
       : ${EXCEPTION:?Login failed → result: $RESULT | $ERROR}    
     }
     TOKEN=$(echo $RESPONSE | jq -r '.auth')
     echo "Token obtained : ${TOKEN:0:10}..."
-
-    #store token
-    local tokeFile="tokenfile"
-    if [[ ! -f ${tokeFile} ]]; then 
-        echo "$TOKEN" > "${tokeFile}"
-    else
-     : # Pas d'erreur  a remonter ?
-    fi
-
 }
 
 function upload() {
@@ -56,15 +47,15 @@ function upload() {
     
       local UPR="$(jq -r '.result' <<< "${UPLOADPROGRESS}")"
 
-      if [[ "${UPR}" -eq 1900 ]}; then
+      if [[ "${UPR}" -eq 1900 ]]; then
         echo "Transfer initiating"
       else
-        local TOTAL=$(jq -r '.total' <<< "${$UPLOADPROGRESS}")
-        local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
-        local UPLOADED=$(jq -r '.uploaded' <<< "${$UPLOADPROGRESS}")
-        local UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
-        local PERCENTAGE=$((UPLOADED * 100 / TOTAL))
-        echo "Upload progress: $PERCENTAGE% (${UPLOADED_MB}/${TOTAL_MB MB})"
+        local TOTAL=$(jq -r '.total' <<< "${UPLOADPROGRESS}")
+        local TOTAL_MB=$(( "${TOTAL}" / 1024 / 1024 ))
+        local UPLOADED=$(jq -r '.uploaded' <<< "${UPLOADPROGRESS}")
+        local UPLOADED_MB=$(( "${UPLOADED}" / 1024 / 1024 ))
+        local PERCENTAGE=$(( "${UPLOADED}" * 100 / "${TOTAL}" ))
+        echo "Upload progress: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
       fi
       sleep 2
     done
@@ -79,9 +70,9 @@ function upload() {
 
     local RESULT=$(echo "${RESPONSE}" | jq '.result')
 
-    [[ "$RESULT" -ne 0 ]] || {
+    [[ "$RESULT" -eq 0 ]] || {
       local ERROR=$(echo $RESPONSE | jq -r '.error')
-      cat << "EOF"
+      cat << EOF
 Upload KO → $ERROR
 ---------------------------------
 Code	Description
@@ -100,7 +91,7 @@ EOF
       return 1
     }
       
-    local FILEID=$(echo "${RESPONSE}" | jq '.fileids[0]')
+    local FILEID=$( jq -r '.fileids[0]' <<< "${RESPONSE}" )
     echo "Upload OK → fileid: $FILEID"
 
 }
@@ -110,23 +101,22 @@ function logout() {
     "https://eapi.pcloud.com/logout" \
     --data-urlencode "auth=$TOKEN")"
 
-    local LOGOUTRESULT="$(echo ${LOGOUTREQ} | jq '.result')"
-    [[ "$LOGOUTRESULT" -ne 0 ]] || {
+    local LOGOUTRESULT="$(echo ${LOGOUTREQ} | jq -r '.result')"
+    [[ "$LOGOUTRESULT" -eq 0 ]] && echo "Logout successful." || {
       local ERROR="$(jq -r '.error' <<< "${LOGOUTREQ}")"
       echo "Logout failed → $ERROR" >&2
     }
-    echo "Logout successful."
 }
 
 function get_quota() {
 
     local USERINFO="$(curl -fsSlG "https://eapi.pcloud.com/userinfo" \
-    --data-urlencode "auth=${TOKEN}?:Exception: Missing ${TOKEN} )"
-    QUOTA="$(jq '.quota' <<< "${$USERINFO}")"
-    USEDQUOTA="$(jq '.usedquota' <<< "${$USERINFO}")"
-    FREEQUOTA=$(( QUOTA - USEDQUOTA ))
-    FREEQUOTA_MB=$(( FREEQUOTA / 1024 / 1024 ))
-    local QUOTA_MB=$(( QUOTA / 1024 / 1024 ))
-    local USEDQUOTA_MB=$(( USEDQUOTA / 1024 / 1024 ))
+    --data-urlencode "auth=${TOKEN:?Non define}")"
+    QUOTA="$(jq '.quota' <<< "${USERINFO}")"
+    USEDQUOTA="$(jq '.usedquota' <<< "${USERINFO}")"
+    FREEQUOTA=$(( $QUOTA - $USEDQUOTA ))
+    FREEQUOTA_MB=$(( $FREEQUOTA / 1024 / 1024 ))
+    local QUOTA_MB=$(( $QUOTA / 1024 / 1024 ))
+    local USEDQUOTA_MB=$(( $USEDQUOTA / 1024 / 1024 ))
     echo "Quota: ${USEDQUOTA_MB}/${QUOTA_MB} MB used, ${FREEQUOTA_MB} MB free"
 }
