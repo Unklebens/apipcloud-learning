@@ -22,7 +22,7 @@ SUCCESS_FILES=()
 FAIL_FILES=()
 
 #purge
-[[ "${FILECOUNT}" -gt $(( "${FILETOKEEP}" - 1 )) ]] && delete_file "${FILESPRESENT[0]}"
+[[ "${FILECOUNT}" -gt $(( "${FILESTOKEEP}" - 1 )) ]] && delete_file "${FILESPRESENT[0]}"
 
 for f; do # parcours les parametres
   COUNT=$((COUNT + 1))

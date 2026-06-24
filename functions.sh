@@ -150,15 +150,15 @@ function list_folder() {
 
 function delete_file() {
 
-
-  local FTD=$(cut -d ':' -f 1 <<< "${1}?:Non defini") # nom du fichier à supprimer
+  : ${1:?Fichier a supprimer non defini} 
+  local FTD=$(cut -d ':' -f 1 <<< "${1}") # nom du fichier à supprimer
   local IDTD=$(cut -d ':' -f 2 <<< "${1}")
   local FILEDELETION="$(curl -fsSLG "https://eapi.pcloud.com/deletefile" \
     --data-urlencode "auth=${TOKEN:?Non defini}" \
     --data-urlencode "fileid=${IDTD:?Non defini}")"
 
     local RESULT="$(jq -r '.result' <<< "${FILEDELETION}")"
-    [[ "$RESULT" -eq 0 ]] && echo "File "${FTD}" deleted successfully." && FILESPRESENT=("${FILESPRESENT[@]}") || {
+    [[ "$RESULT" -eq 0 ]] && echo "File "${FTD}" deleted successfully." && FILESPRESENT=("${FILESPRESENT[@]:1}") || {
       local ERROR="$(jq -r '.error' <<< "${FILEDELETION}")"
       : ${EXCEPTION:?Delete file failed → result: $RESULT | $ERROR}
     }
