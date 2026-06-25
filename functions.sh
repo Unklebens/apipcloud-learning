@@ -48,13 +48,13 @@ function upload() {
       local UPR="$(jq -r '.result' <<< "${UPLOADPROGRESS}")"
 
       if [[ "${UPR}" -eq 1900 ]]; then
-        echo "Transfer initiating"
+        echo "Transfer initiating : "${UPR}""
       else
         local TOTAL=$(jq -r '.total' <<< "${UPLOADPROGRESS}")
-        local TOTAL_MB=$(( "${TOTAL}" / 1024 / 1024 ))
+        local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
         local UPLOADED=$(jq -r '.uploaded' <<< "${UPLOADPROGRESS}")
-        local UPLOADED_MB=$(( "${UPLOADED}" / 1024 / 1024 ))
-        local PERCENTAGE=$(( "${UPLOADED}" * 100 / "${TOTAL}" ))
+        local UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
+        local PERCENTAGE=$(( UPLOADED * 100 / TOTAL ))
         echo "Upload progress: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
       fi
       sleep 2
@@ -112,12 +112,12 @@ function get_quota() {
 
     local USERINFO="$(curl -fsSlG "https://eapi.pcloud.com/userinfo" \
     --data-urlencode "auth=${TOKEN:?Non defini}")"
-    QUOTA="$(jq '.quota' <<< "${USERINFO}")"
-    USEDQUOTA="$(jq '.usedquota' <<< "${USERINFO}")"
-    FREEQUOTA=$(( $QUOTA - $USEDQUOTA ))
-    FREEQUOTA_MB=$(( $FREEQUOTA / 1024 / 1024 ))
-    local QUOTA_MB=$(( $QUOTA / 1024 / 1024 ))
-    local USEDQUOTA_MB=$(( $USEDQUOTA / 1024 / 1024 ))
+    local QUOTA="$(jq '.quota' <<< "${USERINFO}")"
+    local USEDQUOTA="$(jq '.usedquota' <<< "${USERINFO}")"
+    FREEQUOTA=$(( QUOTA - USEDQUOTA )) #pas local car on s'en sert dans main.sh
+    local FREEQUOTA_MB=$(( FREEQUOTA / 1024 / 1024 ))
+    local QUOTA_MB=$(( QUOTA / 1024 / 1024 ))
+    local USEDQUOTA_MB=$(( USEDQUOTA / 1024 / 1024 ))
     echo "Quota: ${USEDQUOTA_MB}/${QUOTA_MB} MB used, ${FREEQUOTA_MB} MB free"
 }
 
@@ -158,7 +158,7 @@ function delete_file() {
     --data-urlencode "fileid=${IDTD:?Non defini}")"
 
     local RESULT="$(jq -r '.result' <<< "${FILEDELETION}")"
-    [[ "$RESULT" -eq 0 ]] && echo "File "${FTD}" deleted successfully." && FILESPRESENT=("${FILESPRESENT[@]:1}") || {
+    [[ "$RESULT" -eq 0 ]] && echo "File "${FTD}" deleted successfully." && FILESPRESENT=("${FILESPRESENT[@]:1}") && (( FILECOUNT-- )) || {
       local ERROR="$(jq -r '.error' <<< "${FILEDELETION}")"
       : ${EXCEPTION:?Delete file failed → result: $RESULT | $ERROR}
     }

@@ -29,7 +29,7 @@ for f; do # parcours les parametres
   echo "Transferring file $COUNT/$TOTAL"
   FILESIZE="$(du -b "$f" | cut -f1)"
   if [[ ${FILESIZE} -gt ${FREEQUOTA:?variable non définie} ]]; then
-    FILESIZE_MB=$(( $FILESIZE / 1024 / 1024 ))
+    FILESIZE_MB=$(( FILESIZE / 1024 / 1024 ))
     echo "File ${f} is too large to upload (${FILESIZE_MB} MB). Skipping."
     FAIL_FILES+=("${f}")
     continue
@@ -37,7 +37,7 @@ for f; do # parcours les parametres
   upload "${f}"
   if [[ ${?} -eq 0 ]]; then
     SUCCESS_FILES+=("${f}")
-    FREEQUOTA=$(( $FREEQUOTA - $FILESIZE ))
+    FREEQUOTA=$(( FREEQUOTA - FILESIZE ))
    else
      FAIL_FILES+=("${f}")
    fi
