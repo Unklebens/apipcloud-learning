@@ -38,7 +38,7 @@ function upload() {
     local UPLOAD_PID=$!  # on recupère le PID du curl en background
 
     echo "transfering ${LOCAL_FILENAME} : ${PROGRESS_HASH}"
-    sleep 5 # attendre un peu avant de vérifier la progression
+    sleep 15 # attendre un peu avant de vérifier la progression
 
     while kill -0 ${UPLOAD_PID} 2>/dev/null; do # tant que le processus d'upload est actif
       local UPLOADPROGRESS="$(curl -fsSL -G "https://eapi.pcloud.com/uploadprogress" \
@@ -48,7 +48,7 @@ function upload() {
       local UPR="$(jq -r '.result' <<< "${UPLOADPROGRESS}")"
 
       if [[ "${UPR}" -eq 1900 ]]; then
-        #echo "Transfer progress unavailable : "${UPR}"" #the uploadprogress endpoint is unstable especially for large files, so we just ignore this error and wait for the next iteration
+        echo "Transfer progress unavailable : "${UPR}"" #the uploadprogress endpoint is unstable especially for large files, so we just ignore this error and wait for the next iteration
       else
         local TOTAL=$(jq -r '.total' <<< "${UPLOADPROGRESS}")
         local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
@@ -57,7 +57,7 @@ function upload() {
         local PERCENTAGE=$(( UPLOADED * 100 / TOTAL ))
         echo "Upload progress: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
       fi
-      sleep 15
+      sleep 30
     done
 
     wait ${UPLOAD_PID}  # attend la fin proprement
