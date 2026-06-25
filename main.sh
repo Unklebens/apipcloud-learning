@@ -25,6 +25,7 @@ FAIL_FILES=()
 [[ "${FILECOUNT}" -gt $(( "${FILESTOKEEP}" - 1 )) ]] && delete_file "${FILESPRESENT[0]}"
 
 for f; do # parcours les parametres
+  [[ -f "${f}" ]] || { echo "File ${f} not found. Skipping." >&2; FAIL_FILES+=("${f}"); continue; }
   COUNT=$((COUNT + 1))
   echo "Transferring file $COUNT/$TOTAL"
   FILESIZE="$(du -b "$f" | cut -f1)"

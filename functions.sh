@@ -163,4 +163,11 @@ function delete_file() {
       : ${EXCEPTION:?Delete file failed → result: $RESULT | $ERROR}
     }
 
+    #empty trash
+    local EMPTYTRASH="$(curl -fsSLG "https://eapi.pcloud.com/trash_clear" \
+    --data-urlencode "auth=${TOKEN:?Non defini}" \
+    --data-urlencode "folderid=0")"
+
+    [[ "$EMPTYTRASH" -eq 0 ]] && echo "Trash cleared successfully."
+
 }
