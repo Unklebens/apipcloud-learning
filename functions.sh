@@ -48,7 +48,7 @@ function upload() {
       local UPR="$(jq -r '.result' <<< "${UPLOADPROGRESS}")"
 
       if [[ "${UPR}" -eq 1900 ]]; then
-        echo "Transfer initiating : "${UPR}""
+        #echo "Transfer progress unavailable : "${UPR}"" #the uploadprogress endpoint is unstable especially for large files, so we just ignore this error and wait for the next iteration
       else
         local TOTAL=$(jq -r '.total' <<< "${UPLOADPROGRESS}")
         local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))

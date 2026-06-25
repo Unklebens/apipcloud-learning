@@ -77,6 +77,27 @@ Transferring file 2/2
 ...
 ```
 
+la variable `FILESTOKEEP` dans main.sh permet de mettre en place une rotation des fichiers avec un nombre customisable
+
+> :warning: **si vous transférez plus d'un fichier**: l'implémentation actuelle ne fera pas un bon travail
+
+### Conteneurisation
+
+Un dockerfile est disponible pour faire un upload dans un conteneur , les variables peuvent être sourcées ou transmises de façon offusquée si c'est lancé par Jenkins par exemple
+
+
+```bash
+#build the image from inside the repo
+docker build . -t pclouduploader:v0 #<10s
+
+docker run --rm \
+  -e PCLOUDUSER=$PCLOUDUSER \
+  -e PCLOUDPASS=$PCLOUDPASS \
+  -v /sourceFileDirectory:/backups:ro \
+  pclouduploader:v0 \
+  /backups/fileToUpload.tar.gz
+```
+
 ---
 
 ## Structure
@@ -85,6 +106,7 @@ Transferring file 2/2
 pcloud-backup/
 ├── main.sh         ← point d'entrée, boucle sur les arguments
 ├── functions.sh    ← fonctions login / upload / logout
+├── Dockerfile      ← permet d'en faire un conteneur
 └── README.md
 ```
 
@@ -97,6 +119,6 @@ pcloud-backup/
 - [x] Gestion des erreurs curl et codes retour pCloud
 - [x] Paramétrage par variables d'environnement
 - [x] Upload de plusieurs fichiers en arguments
-- [ ] Containerisation avec `curlimages/curl`
-- [ ] POC cron sur dockerhost
+- [x] Containerisation avec `alpine`
+- [ ] POC cron sur dockerhost `in progress`
 - [ ] Pipeline Jenkins
