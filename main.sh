@@ -22,7 +22,7 @@ SUCCESS_FILES=()
 FAIL_FILES=()
 
 #purge
-[[ "${FILECOUNT}" -gt $(( "${FILESTOKEEP}" - 1 )) ]] && delete_file "${FILESPRESENT[0]}"
+[[ "${FILECOUNT}" -gt $(( "${FILESTOKEEP}" - 1 )) ]] && delete_file "${FILESPRESENT[0]}" && get_quota
 
 for f; do # parcours les parametres
   [[ -f "${f}" ]] || { echo "File ${f} not found. Skipping." >&2; FAIL_FILES+=("${f}"); continue; }
