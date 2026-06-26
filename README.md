@@ -98,15 +98,32 @@ docker run --rm \
   /backups/fileToUpload.tar.gz
 ```
 
+
+### Utilisation avec jenkins
+
+je prevois de me service de cette dynamique via Jenkins , un fichier compose est present
+
+Pour l'auth Tailscale au premier démarrage :
+
+```bash
+docker compose up -d
+docker exec tailscale tailscale up
+# → colle le lien affiché dans ton navigateur
+```
+
+Une fois authentifié l'état est persisté dans ./tailscale-state
+
+
 ---
 
 ## Structure
 
 ```
 pcloud-backup/
-├── main.sh         ← point d'entrée, boucle sur les arguments
-├── functions.sh    ← fonctions login / upload / logout
-├── Dockerfile      ← permet d'en faire un conteneur
+├── main.sh                ← point d'entrée, boucle sur les arguments
+├── functions.sh           ← fonctions login / upload / logout
+├── Dockerfile             ← permet d'en faire un conteneur
+├── Docker-compose.yml     ← compose pour jenkins
 └── README.md
 ```
 

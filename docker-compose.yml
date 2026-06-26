@@ -1,0 +1,32 @@
+services:
+
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale
+    hostname: jenkins-ubuntu104        # nom qui apparaitra dans ton dashboard Tailscale
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    volumes:
+      - ./tailscale-state:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TS_AUTHKEY=                    # laisser vide, on auth manuellement (voir README)
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    network_mode: host                 # tailscale a besoin du réseau host pour fonctionner
+
+  jenkins:
+    image: jenkins/jenkins:2.479.3-lts
+    container_name: jenkins
+    restart: unless-stopped
+    depends_on:
+      - tailscale
+    network_mode: service:tailscale    # jenkins partage le réseau de tailscale (pattern sidecar)
+    user: root                         # nécessaire pour accès au socket docker si besoin plus tard
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
+    volumes:
+      - ./jenkins-data:/var/jenkins_home
+      - /etc/localtime:/etc/localtime:ro
