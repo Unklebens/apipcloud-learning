@@ -44,6 +44,9 @@ ENV_FILE="../homelab/.secret/pcloud.env"
 # Rendre le script exécutable
 chmod +x main.sh
 
+# Sourcer le fichier d'.env (source en bash mais . ~/.secret/pcloud.env en sh via cron)
+source ~/.secret/pcloud.env 
+
 # Uploader un fichier
 ./main.sh /chemin/vers/fichier.tar.gz
 
