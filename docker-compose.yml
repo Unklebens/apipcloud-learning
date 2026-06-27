@@ -19,9 +19,12 @@ services:
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
     network_mode: host                 # tailscale a besoin du réseau host pour fonctionner
+    dns:
+      - 100.100.100.100 # pour que jenkins puisse résoudre les noms de domaine via Tailscale
+      - 1.1.1.1
 
   jenkins:
-    image: jenkins/jenkins:2.479.3-lts
+    image: jenkins/jenkins:2.555.3-lts
     container_name: jenkins
     restart: unless-stopped
     labels:
