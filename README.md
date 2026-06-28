@@ -47,19 +47,14 @@ chmod +x main.sh
 # Sourcer le fichier d'.env (source en bash mais . ~/.secret/pcloud.env en sh via cron)
 source ~/.secret/pcloud.env 
 
-# Uploader un fichier
-./main.sh /chemin/vers/fichier.tar.gz
+# Synchroniser un dossier
+./main.sh /chemin/vers/dossier
 
-# Uploader plusieurs fichiers
-./main.sh /chemin/vers/fichier1.tar.gz /chemin/vers/fichier2.tar.gz
-
-# Les noms de fichiers avec espaces doivent être entre guillemets
-./main.sh "/chemin/vers/mon fichier.tar.gz"
 ```
 
 ---
 
-## Ce que fait le script
+## Ce que fait le script V1
 
 ```
 login()   → authentification pCloud → token de session
@@ -80,9 +75,20 @@ Transferring file 2/2
 ...
 ```
 
-la variable `FILESTOKEEP` dans main.sh permet de mettre en place une rotation des fichiers avec un nombre customisable
+### Sync miroir (compare.sh) V2
 
-> :warning: **si vous transférez plus d'un fichier**: l'implémentation actuelle ne fera pas un bon travail
+Synchronise les N derniers fichiers d'un dossier local avec un dossier pCloud.
+Compare les deux états et décide quoi uploader et quoi supprimer.
+
+```bash
+chmod +x compare.sh
+./compare.sh /chemin/vers/dossier
+```
+
+- Conserve les 3 derniers fichiers du dossier local (tri alphabétique — format `YYYY-MM-DD` requis)
+- Supprime les fichiers présents sur pCloud mais absents de la sélection locale
+- Uploade les fichiers manquants sur pCloud
+- `FOLDERID` à configurer dans `compare.sh`
 
 ### Conteneurisation
 
@@ -96,9 +102,9 @@ docker build . -t pclouduploader:v0 #<10s
 docker run --rm \
   -e PCLOUDUSER=$PCLOUDUSER \
   -e PCLOUDPASS=$PCLOUDPASS \
-  -v /sourceFileDirectory:/backups:ro \
+  -v /sourceDirectory:/backups:ro \
   pclouduploader:v0 \
-  /backups/fileToUpload.tar.gz
+  /backups
 ```
 
 
@@ -106,15 +112,16 @@ docker run --rm \
 
 je prevois de me service de cette dynamique via Jenkins , un fichier compose est present
 
-Pour l'auth Tailscale au premier démarrage :
+Pour l'auth Tailscale au premier démarrage si la TSAUTHKEY n'est dans le compose directement:
 
 ```bash
 docker compose up -d
 docker exec tailscale tailscale up
 # → colle le lien affiché dans ton navigateur
+#Une fois authentifié l'état est persisté dans ./tailscale-state
 ```
 
-Une fois authentifié l'état est persisté dans ./tailscale-state
+
 
 
 ---
@@ -123,10 +130,12 @@ Une fois authentifié l'état est persisté dans ./tailscale-state
 
 ```
 pcloud-backup/
-├── main.sh                ← point d'entrée, boucle sur les arguments
+├── compare.sh             ← sync miroir entre un dossier local et pCloud
+├── main.sh                ← ancien point d'entrée, boucle sur les arguments
 ├── functions.sh           ← fonctions login / upload / logout
 ├── Dockerfile             ← permet d'en faire un conteneur
 ├── Docker-compose.yml     ← compose pour jenkins
+├── Jenkinsfile            ← pour faire l'upload/sync via jenkins
 └── README.md
 ```
 
@@ -140,5 +149,5 @@ pcloud-backup/
 - [x] Paramétrage par variables d'environnement
 - [x] Upload de plusieurs fichiers en arguments
 - [x] Containerisation avec `alpine`
-- [ ] POC cron sur dockerhost `in progress`
-- [ ] Pipeline Jenkins
+- [x] POC cron sur dockerhost 
+- [x] Pipeline Jenkins
