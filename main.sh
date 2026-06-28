@@ -10,19 +10,18 @@ source functions.sh || : ${EXCEPTION:?"functions.sh: illisible ou absent"}
 
 [[ ${#} -ge 1 ]] || : ${EXCEPTION:?"No file provided. Exiting."}
 
-FOLDERID=24924892347 #<-- dossier de destination sur pCloud
-FILESTOKEEP=3
+[[ -z "${FOLDERID}" ]] && FOLDERID=24924892347
 
-login
+
+#login
 get_quota
-list_folder
+#list_folder
 TOTAL=${#}
 COUNT=0
 SUCCESS_FILES=()
 FAIL_FILES=()
 
-#purge
-[[ "${FILECOUNT}" -gt $(( "${FILESTOKEEP}" - 1 )) ]] && delete_file "${FILESPRESENT[0]}" && get_quota
+
 
 for f; do # parcours les parametres
   [[ -f "${f}" ]] || { echo "File ${f} not found. Skipping." >&2; FAIL_FILES+=("${f}"); continue; }
