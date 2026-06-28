@@ -151,5 +151,5 @@ pcloud-backup/
 - [x] Paramétrage par variables d'environnement
 - [x] Upload de plusieurs fichiers en arguments
 - [x] Containerisation avec `alpine`
-- [ ] POC cron sur dockerhost `in progress`
-- [ ] Pipeline Jenkins
+- [x] POC cron sur dockerhost 
+- [x] Pipeline Jenkins
