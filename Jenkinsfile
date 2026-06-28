@@ -11,7 +11,6 @@ pipeline {
         string(name: 'ARCHIVE_NAME', defaultValue: '', description: 'Nom de l archive a uploader')
         }
     stages {
-        }
         stage('Push to pcloud') {
             environment {
                 PCLOUDCREDS = credentials('PCLOUDcreds')
@@ -21,3 +20,4 @@ pipeline {
             }
         }
     }
+}
