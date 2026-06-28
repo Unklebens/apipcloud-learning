@@ -102,7 +102,7 @@ function logout() {
     --data-urlencode "auth=$TOKEN")"
 
     local LOGOUTRESULT="$(echo ${LOGOUTREQ} | jq -r '.result')"
-    [[ "$LOGOUTRESULT" -eq 0 ]] && echo "Logout successful." || {
+    [[ "${LOGOUTRESULT}" -eq 0 ]] && echo "Logout successful." || {
       local ERROR="$(jq -r '.error' <<< "${LOGOUTREQ}")"
       echo "Logout failed → $ERROR" >&2
     }
@@ -129,7 +129,7 @@ function list_folder() {
     #echo "${LISTFOLDER}"
 
     local RESULT="$(jq -r '.result' <<< "${LISTFOLDER}")"
-    [[ "$RESULT" -eq 0 ]] || {
+    [[ "${RESULT}" -eq 0 ]] || {
       local ERROR="$(jq -r '.error' <<< "${LISTFOLDER}")"
       : ${EXCEPTION:?List folder failed → result: $RESULT | $ERROR}
     }
@@ -158,7 +158,7 @@ function delete_file() {
     --data-urlencode "fileid=${IDTD:?Non defini}")"
 
     local RESULT="$(jq -r '.result' <<< "${FILEDELETION}")"
-    [[ "$RESULT" -eq 0 ]] && echo "File "${FTD}" deleted successfully." && FILESPRESENT=("${FILESPRESENT[@]:1}") && (( FILECOUNT-- )) || {
+    [[ "${RESULT}" -eq 0 ]] && echo "File "${FTD}" deleted successfully." && FILESPRESENT=("${FILESPRESENT[@]:1}") && (( FILECOUNT-- )) || {
       local ERROR="$(jq -r '.error' <<< "${FILEDELETION}")"
       : ${EXCEPTION:?Delete file failed → result: $RESULT | $ERROR}
     }
@@ -168,6 +168,12 @@ function delete_file() {
     --data-urlencode "auth=${TOKEN:?Non defini}" \
     --data-urlencode "folderid=0")"
 
-    [[ "$EMPTYTRASH" -eq 0 ]] && echo "Trash cleared successfully."
+    local RESULTTRASH="$(jq -r '.result' <<< "${EMPTYTRASH}")"
+    [[ "$RESULTTRASH" -eq 0 ]] || {
+      local ERROR="$(jq -r '.error' <<< "${EMPTYTRASH}")"
+      : ${EXCEPTION:?Empty trash failed → result: $RESULTTRASH | $ERROR}
+    }
+
+    [[ "${RESULTTRASH}" -eq 0 ]] && echo "Trash cleared successfully."
 
 }
