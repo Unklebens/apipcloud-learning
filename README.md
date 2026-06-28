@@ -117,6 +117,8 @@ docker exec tailscale tailscale up
 Une fois authentifié l'état est persisté dans ./tailscale-state
 
 
+Un jenkinsfile fonctionnel est aussi dispo, attention le paramètre doit contenir l'extension du fichier
+
 ---
 
 ## Structure
