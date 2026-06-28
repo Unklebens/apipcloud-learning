@@ -124,6 +124,8 @@ docker exec tailscale tailscale up
 
 
 
+Un jenkinsfile fonctionnel est aussi dispo, attention le paramètre doit contenir l'extension du fichier
+
 ---
 
 ## Structure
@@ -149,5 +151,5 @@ pcloud-backup/
 - [x] Paramétrage par variables d'environnement
 - [x] Upload de plusieurs fichiers en arguments
 - [x] Containerisation avec `alpine`
-- [x] POC cron sur dockerhost 
-- [x] Pipeline Jenkins
+- [ ] POC cron sur dockerhost `in progress`
+- [ ] Pipeline Jenkins

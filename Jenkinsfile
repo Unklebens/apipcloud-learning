@@ -1,7 +1,7 @@
 pipeline {
     agent { label 'dockerhost' }
     parameters {
-        string(name: 'ARCHIVE_NAME', defaultValue: '', description: 'Nom de l archive a uploader')
+        string(name: 'ARCHIVE_NAME', defaultValue: '', description: 'Nom de l archive avec extension a uploader')
     }
     stages {
         stage('Build image') {
