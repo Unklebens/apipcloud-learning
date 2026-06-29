@@ -15,12 +15,12 @@ function login(){
       : ${EXCEPTION:?Login failed → result: $RESULT | $ERROR}    
     }
     TOKEN=$(echo $RESPONSE | jq -r '.auth')
-    echo "Token obtained : ${TOKEN:0:10}..."
+    echo "Token obtenu : ${TOKEN:0:10}..."
 }
 
 function upload() {
     local LOCAL_FILE="${1}" #a charger depuis une vraiable d'environnement
-    echo "Uploading file: ${LOCAL_FILE}"
+    echo "Upload du fichier: ${LOCAL_FILE}"
     local LOCAL_FILENAME=$(basename "${LOCAL_FILE}")
 
     local PROGRESS_HASH="$(uuidgen)" # hash unique pour suivre la progression de l'upload
@@ -37,7 +37,7 @@ function upload() {
     -F "file=@${LOCAL_FILE}" > "${TMPFILE}" &
     local UPLOAD_PID=$!  # on recupère le PID du curl en background
 
-    echo "transfering ${LOCAL_FILENAME} : ${PROGRESS_HASH}"
+    echo "Upload ${LOCAL_FILENAME} : ${PROGRESS_HASH}"
     sleep 15 # attendre un peu avant de vérifier la progression
 
     while kill -0 ${UPLOAD_PID} 2>/dev/null; do # tant que le processus d'upload est actif
@@ -48,14 +48,14 @@ function upload() {
       local UPR="$(jq -r '.result' <<< "${UPLOADPROGRESS}")"
 
       if [[ "${UPR}" -eq 1900 ]]; then
-        echo "Transfer progress unavailable : "${UPR}"" #the uploadprogress endpoint is unstable especially for large files, so we just ignore this error and wait for the next iteration
+        echo "Suivi du transfert indisponible : "${UPR}"" # uploadprogress marche pas bien pour les gros fichiers, on ne peut pas suivre la progression
       else
         local TOTAL=$(jq -r '.total' <<< "${UPLOADPROGRESS}")
         local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
         local UPLOADED=$(jq -r '.uploaded' <<< "${UPLOADPROGRESS}")
         local UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
         local PERCENTAGE=$(( UPLOADED * 100 / TOTAL ))
-        echo "Upload progress: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
+        echo "Transfert: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
       fi
       sleep 30
     done
@@ -102,9 +102,9 @@ function logout() {
     --data-urlencode "auth=$TOKEN")"
 
     local LOGOUTRESULT="$(echo ${LOGOUTREQ} | jq -r '.result')"
-    [[ "${LOGOUTRESULT}" -eq 0 ]] && echo "Logout successful." || {
+    [[ "${LOGOUTRESULT}" -eq 0 ]] && echo "Déconnexion réussie." || {
       local ERROR="$(jq -r '.error' <<< "${LOGOUTREQ}")"
-      echo "Logout failed → $ERROR" >&2
+      echo "Déconnexion echouée → $ERROR" >&2
     }
 }
 
@@ -118,7 +118,7 @@ function get_quota() {
     local FREEQUOTA_MB=$(( FREEQUOTA / 1024 / 1024 ))
     local QUOTA_MB=$(( QUOTA / 1024 / 1024 ))
     local USEDQUOTA_MB=$(( USEDQUOTA / 1024 / 1024 ))
-    echo "Quota: ${USEDQUOTA_MB}/${QUOTA_MB} MB used, ${FREEQUOTA_MB} MB free"
+    echo "Quota: ${USEDQUOTA_MB}/${QUOTA_MB} MB utilisés, ${FREEQUOTA_MB} MB libre"
 }
 
 function list_folder() {
@@ -135,13 +135,13 @@ function list_folder() {
     }
 
     FILECOUNT="$(jq -r '.metadata.contents | length' <<< "${LISTFOLDER}")"
-    echo "Folder ${FOLDERID} contains ${FILECOUNT} files."
+    echo "Repertoire ${FOLDERID} contiens ${FILECOUNT} fichiers."
 
     FILESPRESENT=()
     local FILELIST="$(jq -r '.metadata.contents | sort_by(.name) | .[] | select(.isfolder == false) | [.name, (.fileid | tostring)] | join(":")' <<< "${LISTFOLDER}")"
     readarray -t FILESPRESENT <<< "${FILELIST}"
 
-    echo "Files present in folder ${FOLDERID}:"
+    echo "Fichiers dans le repoertoire ${FOLDERID}:"
     for f in "${FILESPRESENT[@]}"; do
         echo "  - $f"
     done
@@ -158,7 +158,7 @@ function delete_file() {
     --data-urlencode "fileid=${IDTD:?Non defini}")"
 
     local RESULT="$(jq -r '.result' <<< "${FILEDELETION}")"
-    [[ "${RESULT}" -eq 0 ]] && echo "File "${FTD}" deleted successfully." && FILESPRESENT=("${FILESPRESENT[@]:1}") && (( FILECOUNT-- )) || {
+    [[ "${RESULT}" -eq 0 ]] && echo "Fichier "${FTD}" supprimé avec succès." && FILESPRESENT=("${FILESPRESENT[@]:1}") && (( FILECOUNT-- )) || {
       local ERROR="$(jq -r '.error' <<< "${FILEDELETION}")"
       : ${EXCEPTION:?Delete file failed → result: $RESULT | $ERROR}
     }
@@ -176,7 +176,7 @@ function empty_trash() {
       : ${EXCEPTION:?Empty trash failed → result: $RESULTTRASH | $ERROR}
     }
 
-    [[ "${RESULTTRASH}" -eq 0 ]] && echo "Trash cleared successfully."
+    [[ "${RESULTTRASH}" -eq 0 ]] && echo "Corbeille vidée avec succès."
 
 }
 
@@ -188,13 +188,13 @@ function multiple_upload(){
   FAIL_FILES=()
 
   for f; do # parcours les parametres
-    [[ -f "${f}" ]] || { echo "File ${f} not found. Skipping." >&2; FAIL_FILES+=("${f}"); continue; }
+    [[ -f "${f}" ]] || { echo "Fichier ${f} introuvable. Fichier ignoré." >&2; FAIL_FILES+=("${f}"); continue; }
     COUNT=$((COUNT + 1))
     echo "Transferring file $COUNT/$TOTAL"
     FILESIZE="$(du -b "$f" | cut -f1)"
     if [[ ${FILESIZE} -gt ${FREEQUOTA:?variable non définie} ]]; then
       FILESIZE_MB=$(( FILESIZE / 1024 / 1024 ))
-      echo "File ${f} is too large to upload (${FILESIZE_MB} MB). Skipping."
+      echo "Le fichier  ${f} a une taille trop importante (${FILESIZE_MB} MB). Fichier ignoré."
       FAIL_FILES+=("${f}")
       continue
     fi
@@ -203,6 +203,7 @@ function multiple_upload(){
       SUCCESS_FILES+=("${f}")
       FREEQUOTA=$(( FREEQUOTA - FILESIZE ))
     else
+      echo "Le fichier  ${f} a échoué. Fichier ignoré."
       FAIL_FILES+=("${f}")
     fi
   done

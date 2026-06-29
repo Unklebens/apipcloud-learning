@@ -30,7 +30,7 @@ if [[ -n "${arraytd}" ]]; then
     FILEDTODELETE=()
     readarray -t FILEDTODELETE <<< "${arraytd}"
     for f in "${FILEDTODELETE[@]}"; do
-        echo "Deleting file not needed on pcloud: $f"
+        echo "Suppression des fichier non présents en local: $f"
         # retrouver la paire nom:fileid dans FILESPRESENT
         for pair in "${FILESPRESENT[@]}"; do
             if [[ "${pair%%:*}" == "$f" ]]; then
@@ -42,7 +42,7 @@ if [[ -n "${arraytd}" ]]; then
     empty_trash
     get_quota
 else
-    echo "No files to delete."
+    echo "Rien a supprimer."
 fi
 
 
@@ -50,7 +50,7 @@ fi
 readarray -t FILESTOUPLOAD < <(comm -23  local remote | sed "s|^|${1}/|")
 
 if [[ -z "${FILESTOUPLOAD}" ]]; then
-    echo "No new files to upload."
+    echo "Rien a uploader."
     logout
     exit 0
 else
