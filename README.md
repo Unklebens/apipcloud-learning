@@ -103,7 +103,7 @@ docker run --rm \
   -e PCLOUDUSER=$PCLOUDUSER \
   -e PCLOUDPASS=$PCLOUDPASS \
   -v /sourceDirectory:/backups:ro \
-  pclouduploader:v0 \
+  pclouduploader:v2 \
   /backups
 ```
 

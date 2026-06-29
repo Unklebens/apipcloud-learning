@@ -1,12 +1,12 @@
 pipeline {
     agent { label 'dockerhost' }
-    parameters {
-        string(name: 'ARCHIVE_NAME', defaultValue: '', description: 'Nom de l archive avec extension a uploader')
-    }
+    // parameters {
+    //     string(name: 'PATH', defaultValue: '', description: 'Chemin de l archive avec extension a uploader')
+    // }
     stages {
         stage('Build image') {
             steps {
-                sh 'docker build -t pclouduploader:v0 .'
+                sh 'docker build -t pclouduploader:v2 .'
             }
         }
         stage('Push to pcloud') {
@@ -18,8 +18,8 @@ pipeline {
                     -e PCLOUDUSER=${PCLOUDCREDS_USR} \
                     -e PCLOUDPASS=${PCLOUDCREDS_PSW} \
                     -v /ssd/docker_backups/pve001:/backups:ro \
-                    pclouduploader:v0 \
-                    /backups/${ARCHIVE_NAME}'''
+                    pclouduploader:v2 \
+                    /backups'''
             }
         }
         stage('Cleanup') {
