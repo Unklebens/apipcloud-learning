@@ -139,7 +139,7 @@ function list_folder() {
 
     FILESPRESENT=()
     local FILELIST="$(jq -r '.metadata.contents | sort_by(.name) | .[] | select(.isfolder == false) | [.name, (.fileid | tostring)] | join(":")' <<< "${LISTFOLDER}")"
-    readarray -t FILESPRESENT <<< "${FILELIST}"
+    [[ -n "${FILELIST}" ]] && readarray -t FILESPRESENT <<< "${FILELIST}"
 
     echo "Fichiers dans le repoertoire ${FOLDERID}:"
     for f in "${FILESPRESENT[@]}"; do
