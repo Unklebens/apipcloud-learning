@@ -49,7 +49,7 @@ fi
 
 readarray -t FILESTOUPLOAD < <(comm -23  local remote | sed "s|^|${1}/|")
 
-if [[ -z "${FILESTOUPLOAD}" ]]; then
+if [[ ${#FILESTOUPLOAD[@]} -eq 0 ]]; then
     echo "Rien a uploader."
     logout
     exit 0
