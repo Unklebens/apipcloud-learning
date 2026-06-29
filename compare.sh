@@ -1,4 +1,5 @@
 #!/bin/bash 
+#input argument: path to the folder to compare with pCloud
 
 [[ ${#} -eq 1 ]] && [[ -d "${1}" ]] || : ${EXCEPTION:?"Chemin non fourni ou trop d'arguments. EXCEPTION !!!!."}
 
@@ -11,7 +12,9 @@ source functions.sh || : ${EXCEPTION:?"functions.sh: illisible ou absent"}
 
 FOLDERID=24924892347 #<-- dossier de destination sur pCloud
 
-find "${1}" -maxdepth 1 -type f | xargs -I{} basename {} | sort | tail -n 3 | sed '/^$/d' > local
+TRIMMEDPATH=$(echo "${1}" | sed 's:/*$::') #retire le / si présent à la fin du chemin
+
+find "${TRIMMEDPATH}" -maxdepth 1 -type f | xargs -I{} basename {} | sort | tail -n 3 | sed '/^$/d' > local
 
 login
 get_quota
