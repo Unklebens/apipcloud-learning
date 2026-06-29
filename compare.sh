@@ -5,6 +5,10 @@
 ENV_FILE="../homelab/.secret/pcloud.env" #<-- fichier d'environnement contenant les variables d'environnement nécessaires
 [ -f "${ENV_FILE}" ] && source "${ENV_FILE}"  # source si présent, sinon on suppose que les vars arrivent de l'environnement Docker
 source functions.sh || : ${EXCEPTION:?"functions.sh: illisible ou absent"}
+
+: ${PCLOUDUSER:?variable non definie}  # vérifie après le source, peu importe d'où vient la variable
+: ${PCLOUDPASS:?variable non definie}
+
 FOLDERID=24924892347 #<-- dossier de destination sur pCloud
 
 find "${1}" -maxdepth 1 -type f | xargs -I{} basename {} | sort | tail -n 3 | sed '/^$/d' > local
@@ -32,6 +36,8 @@ if [[ -n "${arraytd}" ]]; then
             fi
         done
     done
+    empty_trash
+    get_quota
 else
     echo "No files to delete."
 fi
@@ -45,6 +51,9 @@ if [[ -z "${FILESTOUPLOAD}" ]]; then
     logout
     exit 0
 else
-    source main.sh "${FILESTOUPLOAD[@]}"
+    multiple_upload "${FILESTOUPLOAD[@]}"
 fi
 
+get_quota
+list_folder
+logout

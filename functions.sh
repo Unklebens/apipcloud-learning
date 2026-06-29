@@ -162,7 +162,9 @@ function delete_file() {
       local ERROR="$(jq -r '.error' <<< "${FILEDELETION}")"
       : ${EXCEPTION:?Delete file failed → result: $RESULT | $ERROR}
     }
+}
 
+function empty_trash() {
     #empty trash
     local EMPTYTRASH="$(curl -fsSLG "https://eapi.pcloud.com/trash_clear" \
     --data-urlencode "auth=${TOKEN:?Non defini}" \
@@ -176,4 +178,40 @@ function delete_file() {
 
     [[ "${RESULTTRASH}" -eq 0 ]] && echo "Trash cleared successfully."
 
+}
+
+function multiple_upload(){
+
+  TOTAL=${#}
+  COUNT=0
+  SUCCESS_FILES=()
+  FAIL_FILES=()
+
+  for f; do # parcours les parametres
+    [[ -f "${f}" ]] || { echo "File ${f} not found. Skipping." >&2; FAIL_FILES+=("${f}"); continue; }
+    COUNT=$((COUNT + 1))
+    echo "Transferring file $COUNT/$TOTAL"
+    FILESIZE="$(du -b "$f" | cut -f1)"
+    if [[ ${FILESIZE} -gt ${FREEQUOTA:?variable non définie} ]]; then
+      FILESIZE_MB=$(( FILESIZE / 1024 / 1024 ))
+      echo "File ${f} is too large to upload (${FILESIZE_MB} MB). Skipping."
+      FAIL_FILES+=("${f}")
+      continue
+    fi
+    upload "${f}"
+    if [[ ${?} -eq 0 ]]; then
+      SUCCESS_FILES+=("${f}")
+      FREEQUOTA=$(( FREEQUOTA - FILESIZE ))
+    else
+      FAIL_FILES+=("${f}")
+    fi
+  done
+  echo "Upload terminé : ${#SUCCESS_FILES[@]} OK, ${#FAIL_FILES[@]} échoué(s)"
+
+  if [[ ${#FAIL_FILES[@]} -gt 0 ]]; then
+    echo "Fichiers échoués :"
+    for f in "${FAIL_FILES[@]}"; do
+      echo "  - $f"
+    done
+  fi
 }
