@@ -7,7 +7,7 @@ ENV_FILE="../homelab/.secret/pcloud.env" #<-- fichier d'environnement contenant 
 source functions.sh || : ${EXCEPTION:?"functions.sh: illisible ou absent"}
 FOLDERID=24924892347 #<-- dossier de destination sur pCloud
 
-find "${1}" -maxdepth 1 -type f -printf '%f\n' | sort | tail -n 3 | sed '/^$/d' > local
+find "${1}" -maxdepth 1 -type f | xargs -I{} basename {} | sort | tail -n 3 | sed '/^$/d' > local
 
 login
 get_quota
@@ -17,7 +17,7 @@ for f in "${FILESPRESENT[@]}"; do
 done
 
 # les fichiers à supprimer sont ceux qui sont dans remote mais pas dans local
-arraytd="$(comm -13 --nocheck-order local remote)"
+arraytd="$(comm -13 local remote)"
 
 if [[ -n "${arraytd}" ]]; then
     FILEDTODELETE=()
@@ -38,7 +38,7 @@ fi
 
 
 
-readarray -t FILESTOUPLOAD < <(comm -23 --nocheck-order local remote | sed "s|^|${1}/|")
+readarray -t FILESTOUPLOAD < <(comm -23  local remote | sed "s|^|${1}/|")
 
 if [[ -z "${FILESTOUPLOAD}" ]]; then
     echo "No new files to upload."
