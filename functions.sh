@@ -126,7 +126,6 @@ function list_folder() {
     local LISTFOLDER="$(curl -fsSLG "https://eapi.pcloud.com/listfolder" \
     --data-urlencode "auth=${TOKEN:?Non defini}" \
     --data-urlencode "folderid=${FOLDERID:?Non defini}")"
-    #echo "${LISTFOLDER}"
 
     local RESULT="$(jq -r '.result' <<< "${LISTFOLDER}")"
     [[ "${RESULT}" -eq 0 ]] || {
@@ -135,17 +134,19 @@ function list_folder() {
     }
 
     FILECOUNT="$(jq -r '.metadata.contents | length' <<< "${LISTFOLDER}")"
-    echo "Repertoire ${FOLDERID} contiens ${FILECOUNT} fichiers."
+    echo "Répertoire ${FOLDERID} contient ${FILECOUNT} fichier(s)."
 
     FILESPRESENT=()
-    local FILELIST="$(jq -r '.metadata.contents | sort_by(.name) | .[] | select(.isfolder == false) | [.name, (.fileid | tostring)] | join(":")' <<< "${LISTFOLDER}")"
-    [[ -n "${FILELIST}" ]] && readarray -t FILESPRESENT <<< "${FILELIST}"
 
-    echo "Fichiers dans le repoertoire ${FOLDERID}:"
-    for f in "${FILESPRESENT[@]}"; do
-        echo "  - $f"
-    done
+    if [[ "${FILECOUNT}" -gt 0 ]]; then
+        local FILELIST="$(jq -r '.metadata.contents | sort_by(.name) | .[] | select(.isfolder == false) | [.name, (.fileid | tostring)] | join(":")' <<< "${LISTFOLDER}")"
+        [[ -n "${FILELIST}" ]] && readarray -t FILESPRESENT <<< "${FILELIST}"
 
+        echo "Fichiers dans le répertoire ${FOLDERID} :"
+        for f in "${FILESPRESENT[@]}"; do
+            echo "  - $f"
+        done
+    fi
 }
 
 function delete_file() {
