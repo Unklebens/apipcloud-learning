@@ -182,19 +182,31 @@ function empty_trash() {
 
 function multiple_upload(){
 
-  TOTAL=${#}
-  COUNT=0
-  SUCCESS_FILES=()
+  EFFECTIVE_FILES=()
   FAIL_FILES=()
 
-  for f; do # parcours les parametres
-    [[ -f "${f}" ]] || { echo "Fichier ${f} introuvable. Fichier ignoré." >&2; FAIL_FILES+=("${f}"); continue; }
+  # Étape 1 : on ne garde que les fichiers valides
+  for f; do
+    if [[ -f "${f}" ]]; then
+      EFFECTIVE_FILES+=("${f}")
+    else
+      echo "Fichier ${f} introuvable. Fichier ignoré." >&2
+      FAIL_FILES+=("${f}")
+    fi
+  done
+
+  TOTAL=${#EFFECTIVE_FILES[@]}
+  COUNT=0
+  SUCCESS_FILES=()
+
+  # Étape 2 : upload des fichiers valides uniquement
+  for f in "${EFFECTIVE_FILES[@]}"; do
     COUNT=$((COUNT + 1))
-    echo "Transferring file $COUNT/$TOTAL"
+    echo "Transfert du fichier $COUNT/$TOTAL"
     FILESIZE="$(du -b "$f" | cut -f1)"
     if [[ ${FILESIZE} -gt ${FREEQUOTA:?variable non définie} ]]; then
       FILESIZE_MB=$(( FILESIZE / 1024 / 1024 ))
-      echo "Le fichier  ${f} a une taille trop importante (${FILESIZE_MB} MB). Fichier ignoré."
+      echo "Le fichier ${f} est trop volumineux (${FILESIZE_MB} Mo). Fichier ignoré."
       FAIL_FILES+=("${f}")
       continue
     fi
@@ -203,11 +215,12 @@ function multiple_upload(){
       SUCCESS_FILES+=("${f}")
       FREEQUOTA=$(( FREEQUOTA - FILESIZE ))
     else
-      echo "Le fichier  ${f} a échoué. Fichier ignoré."
+      echo "Le fichier ${f} a échoué. Fichier ignoré."
       FAIL_FILES+=("${f}")
     fi
   done
-  echo "Upload terminé : ${#SUCCESS_FILES[@]} OK, ${#FAIL_FILES[@]} échoué(s)"
+
+  echo "Upload terminé : ${#SUCCESS_FILES[@]} réussi(s), ${#FAIL_FILES[@]} échoué(s)"
 
   if [[ ${#FAIL_FILES[@]} -gt 0 ]]; then
     echo "Fichiers échoués :"
