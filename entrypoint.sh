@@ -20,10 +20,13 @@ find "${TRIMMEDPATH}" -maxdepth 1 -type f | xargs -I{} basename {} | sort | tail
 login
 get_quota
 list_folder
-for f in "${FILESPRESENT[@]}"; do
-    echo "$f" | cut -d ':' -f 1 >> remote
-done
-
+if [[ ${#FILESPRESENT[@]} -eq 0 ]]; then
+    touch remote # si le dossier distant est vide, on crée un fichier vide pour la comparaison
+else
+    for f in "${FILESPRESENT[@]}"; do
+        echo "$f" | cut -d ':' -f 1 >> remote
+    done
+fi
 # les fichiers à supprimer sont ceux qui sont dans remote mais pas dans local
 arraytd="$(comm -13 local remote)"
 
