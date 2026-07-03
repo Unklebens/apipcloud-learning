@@ -38,7 +38,7 @@ function upload() {
     local UPLOAD_PID=$!  # on recupère le PID du curl en background
 
     echo "Upload ${LOCAL_FILENAME} : ${PROGRESS_HASH}"
-    sleep 15 # attendre un peu avant de vérifier la progression
+    #sleep 5 # attendre un peu avant de vérifier la progression
 
     while kill -0 ${UPLOAD_PID} 2>/dev/null; do # tant que le processus d'upload est actif
       local UPLOADPROGRESS="$(curl -fsSL -G "https://eapi.pcloud.com/uploadprogress" \
