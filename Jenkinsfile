@@ -22,10 +22,10 @@ pipeline {
                 sh '''docker run --rm \
                     -e PCLOUDUSER=${PCLOUDCREDS_USR} \
                     -e PCLOUDPASS=${PCLOUDCREDS_PSW} \
-                    -e FOLDERID=${FOLDERID} \
-                    -e RETENTION_DAYS=${RETENTION_DAYS} \
+                    -e FOLDERID="${FOLDERID}" \
+                    -e RETENTION_DAYS="${RETENTION_DAYS}" \
                     -v "${LOCAL_PATH}":/backups:ro \
-                    pclouduploader:${env.BUILD_TAG} \
+                    pclouduploader:"${env.BUILD_TAG}" \
                     /backups'''
             }
         }
