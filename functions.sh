@@ -17,11 +17,26 @@ function login(){
     TOKEN=$(echo $RESPONSE | jq -r '.auth')
     echo "Token obtenu : ${TOKEN:0:10}..."
 }
+function get_sleep_interval() {
+    # $1 = taille du fichier en octets
+    # retourne l'intervalle de sleep en secondes, ou 0 si pas de suivi
+    local size="${1}"
+    local size_mb=$(( size / 1024 / 1024 ))
+
+    if   [[ ${size_mb} -lt 50 ]];    then echo 0
+    elif [[ ${size_mb} -lt 250 ]];   then echo 5
+    elif [[ ${size_mb} -lt 1000 ]];  then echo 10
+    else                                   echo 30
+    fi
+}
 
 function upload() {
     local LOCAL_FILE="${1}" #a charger depuis une vraiable d'environnement
     echo "Upload du fichier: ${LOCAL_FILE}"
     local LOCAL_FILENAME=$(basename "${LOCAL_FILE}")
+
+    local FILESIZE="$(du -b "${LOCAL_FILE}" | cut -f1)"
+    local SLEEP_INTERVAL="$(get_sleep_interval "${FILESIZE}")"
 
     local PROGRESS_HASH="$(uuidgen)" # hash unique pour suivre la progression de l'upload
     local TMPFILE="/tmp/${PROGRESS_HASH}" # fichier temporaire pour stocker la réponse de l'upload
@@ -40,29 +55,33 @@ function upload() {
     echo "Upload ${LOCAL_FILENAME} : ${PROGRESS_HASH}"
     #sleep 5 # attendre un peu avant de vérifier la progression
 
-    while kill -0 ${UPLOAD_PID} 2>/dev/null; do # tant que le processus d'upload est actif
-      local UPLOADPROGRESS="$(curl -fsSL -G "https://eapi.pcloud.com/uploadprogress" \
-        --data-urlencode "auth=$TOKEN" \
-        --data-urlencode "progresshash=$PROGRESS_HASH")"
-    
-      local UPR="$(jq -r '.result' <<< "${UPLOADPROGRESS}")"
+    if [[ ${SLEEP_INTERVAL} -eq 0 ]]; then
+        #echo "Fichier < 50 Mo, pas de suivi de progression."
+        wait ${UPLOAD_PID}
+    else
+        while kill -0 ${UPLOAD_PID} 2>/dev/null; do
+          local UPLOADPROGRESS="$(curl -fsSL -G "https://eapi.pcloud.com/uploadprogress" \
+            --data-urlencode "auth=$TOKEN" \
+            --data-urlencode "progresshash=$PROGRESS_HASH")"
 
-      if [[ "${UPR}" -eq 1900 ]]; then
-        echo "Suivi du transfert indisponible : "${UPR}"" # uploadprogress marche pas bien pour les gros fichiers, on ne peut pas suivre la progression
-      else
-        local TOTAL=$(jq -r '.total' <<< "${UPLOADPROGRESS}")
-        local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
-        local UPLOADED=$(jq -r '.uploaded' <<< "${UPLOADPROGRESS}")
-        local UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
-        local PERCENTAGE=$(( UPLOADED * 100 / TOTAL ))
-        echo "Transfert: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
-      fi
-      sleep 30
-    done
+          local UPR="$(jq -r '.result' <<< "${UPLOADPROGRESS}")"
 
-    wait ${UPLOAD_PID}  # attend la fin proprement
+          if [[ "${UPR}" -eq 1900 ]]; then
+            echo "Suivi du transfert indisponible : ${UPR}"
+          else
+            local TOTAL=$(jq -r '.total' <<< "${UPLOADPROGRESS}")
+            local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
+            local UPLOADED=$(jq -r '.uploaded' <<< "${UPLOADPROGRESS}")
+            local UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
+            local PERCENTAGE=$(( UPLOADED * 100 / TOTAL ))
+            echo "Transfert: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
+          fi
+          sleep "${SLEEP_INTERVAL}"
+        done
+        wait ${UPLOAD_PID}
+    fi
+
     local CURL_EXIT=${?}
-
     [[ ${CURL_EXIT} -eq 0 ]] || : ${EXCEPTION:?curl a échoué → exit code: ${CURL_EXIT}}
     
     local RESPONSE=$(cat "${TMPFILE}")
