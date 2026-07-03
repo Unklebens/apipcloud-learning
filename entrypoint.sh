@@ -10,7 +10,7 @@ source functions.sh || : ${EXCEPTION:?"functions.sh: illisible ou absent"}
 : ${PCLOUDUSER:?variable non definie}  # vérifie après le source, peu importe d'où vient la variable
 : ${PCLOUDPASS:?variable non definie}
 
-: ${FOLDERID:=24924892347} #<-- dossier de destination sur pCloud
+: ${FOLDERID:?FOLDERID doit être défini} #<-- dossier de destination sur pCloud
 echo "Dossier de destination sur pCloud: ${FOLDERID}"
 
 TRIMMEDPATH=$(echo "${1}" | sed 's:/*$::') #retire le / si présent à la fin du chemin
