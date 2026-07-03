@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Build image') {
             steps {
-                sh 'docker build -t pclouduploader:${env.BUILD_TAG} .'
+                sh 'docker build -t pclouduploader:"${env.BUILD_TAG}" .'
             }
         }
         stage('Push to pcloud') {
@@ -20,8 +20,8 @@ pipeline {
             }
             steps {
                 sh '''docker run --rm \
-                    -e PCLOUDUSER=${PCLOUDCREDS_USR} \
-                    -e PCLOUDPASS=${PCLOUDCREDS_PSW} \
+                    -e PCLOUDUSER="${PCLOUDCREDS_USR}" \
+                    -e PCLOUDPASS="${PCLOUDCREDS_PSW}" \
                     -e FOLDERID="${FOLDERID}" \
                     -e RETENTION_DAYS="${RETENTION_DAYS}" \
                     -v "${LOCAL_PATH}":/backups:ro \
