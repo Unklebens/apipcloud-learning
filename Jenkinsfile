@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Build image') {
             steps {
-                sh 'docker build -t pclouduploader:"${env.BUILD_TAG}" .'
+                sh 'docker build -t pclouduploader:"${BUILD_TAG}" .'
             }
         }
         stage('Push to pcloud') {
@@ -25,7 +25,7 @@ pipeline {
                     -e FOLDERID="${FOLDERID}" \
                     -e RETENTION_DAYS="${RETENTION_DAYS}" \
                     -v "${LOCAL_PATH}":/backups:ro \
-                    pclouduploader:"${env.BUILD_TAG}" \
+                    pclouduploader:"${BUILD_TAG}" \
                     /backups'''
             }
         }
