@@ -54,7 +54,7 @@ source ~/.secret/pcloud.env
 
 ---
 
-## Ce que fait le script V1
+## Ce que fait le script main.sh V1
 
 ```
 login()   → authentification pCloud → token de session
@@ -75,22 +75,27 @@ Transferring file 2/2
 ...
 ```
 
-### Sync miroir (compare.sh) V2
+## Sync miroir (entypoint.sh) V2
 
-Synchronise les N derniers fichiers d'un dossier local avec un dossier pCloud.
+Synchronise les **3** derniers fichiers d'un dossier local avec un dossier pCloud.
 Compare les deux états et décide quoi uploader et quoi supprimer.
 
 ```bash
-chmod +x compare.sh
-./compare.sh /chemin/vers/dossier
+chmod +x entypoint.sh
+./entypoint.sh /chemin/vers/dossier
 ```
 
-- Conserve les 3 derniers fichiers du dossier local (tri alphabétique — format `YYYY-MM-DD` requis)
+- Conserve les **3** derniers fichiers du dossier local (tri alphabétique — format `YYYY-MM-DD` requis)
 - Supprime les fichiers présents sur pCloud mais absents de la sélection locale
 - Uploade les fichiers manquants sur pCloud
 - `FOLDERID` à configurer dans `compare.sh`
 
-### Conteneurisation
+## Sync miroir (entypoint.sh) V3
+
+Comme la V2 mais on a variabilisé le chemin source, le folderID et le nombre de fichiers qu'on souhaite avoir comme historique sur le remote
+Voir jenkinsfile
+
+## Conteneurisation
 
 Un dockerfile est disponible pour faire un upload dans un conteneur , les variables peuvent être sourcées ou transmises de façon offusquée si c'est lancé par Jenkins par exemple
 
@@ -108,7 +113,7 @@ docker run --rm \
 ```
 
 
-### Utilisation avec jenkins
+## Utilisation avec jenkins
 
 je prevois de me service de cette dynamique via Jenkins , un fichier compose est present
 
@@ -121,10 +126,19 @@ docker exec tailscale tailscale up
 #Une fois authentifié l'état est persisté dans ./tailscale-state
 ```
 
+### Webhook Jenkins
+
+Le build est trigger par un webhook qui vient d'un backup en cron ailleurs dans l'infra
+
+CRUMB=$(curl -s -u "user:jenkins_user_token" \
+  "http://jenkins_URL:8080/crumbIssuer/api/json" \
+  | jq -r '.crumb')
 
 
-
-Un jenkinsfile fonctionnel est aussi dispo, attention le paramètre doit contenir l'extension du fichier
+curl -s -X POST \
+  -u "user:jenkins_user_token" \
+  -H "Jenkins-Crumb: $CRUMB" \
+  "http://jenkins_URL:8080/job/pCloud%20upload/build?token=token_configure_dans_le_job" 
 
 ---
 
