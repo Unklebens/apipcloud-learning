@@ -2,3 +2,4 @@
 [docker](https://plugins.jenkins.io/docker-plugin/) Version: 1316.v75635a_002b_0a_
 [docker pipeline](https://plugins.jenkins.io/docker-workflow/) Version: 634.vedc7242b_eda_7
 [jobConfigHistory](https://plugins.jenkins.io/jobConfigHistory/) Version: 1367.vc8fa_b_15101dc
+[rebuild](https://plugins.jenkins.io/rebuild/) Version: 338.va_0a_b_50e29397
