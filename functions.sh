@@ -33,86 +33,84 @@ function get_sleep_interval() {
 function upload() {
     local LOCAL_FILE="${1}" #a charger depuis une vraiable d'environnement
     echo "Upload du fichier: ${LOCAL_FILE}"
-    local LOCAL_FILENAME=$(basename "${LOCAL_FILE}")
 
+    local LOCAL_FILENAME=$(basename "${LOCAL_FILE}")
     local FILESIZE="$(du -b "${LOCAL_FILE}" | cut -f1)"
     local SLEEP_INTERVAL="$(get_sleep_interval "${FILESIZE}")"
-
     local PROGRESS_HASH="$(echo "${LOCAL_FILE}${BUILD_NUMBER:-local}" | md5sum | cut -d' ' -f1)" # hash unique pour suivre la progression de l'upload
     local TMPFILE="/tmp/${PROGRESS_HASH}" # fichier temporaire pour stocker la réponse de l'upload
     touch "${TMPFILE}"
 
+    # eapi.pcloud.com pointe vers plusieurs serveurs (load balancer) ; uploadfile et
+    # uploadprogress DOIVENT taper le même serveur, sinon 1900. On fige l'IP ici.
+    local API_IP="$(getent hosts eapi.pcloud.com | awk '{print $1; exit}')"
+    local RESOLVE_ARG="eapi.pcloud.com:443:${API_IP}"
+
     #envoi du fichier en soit
-    curl -fsSL \
-    "https://eapi.pcloud.com/uploadfile" \
-    -F "auth=${TOKEN}" \
-    -F "folderid=${FOLDERID}" \
-    -F "progresshash=${PROGRESS_HASH}" \
-    -F "filename=${LOCAL_FILENAME}" \
-    -F "file=@${LOCAL_FILE}" > "${TMPFILE}" &
-    local UPLOAD_PID=$!  # on recupère le PID du curl en background
+    curl -fsSL --resolve "${RESOLVE_ARG}" \
+        "https://eapi.pcloud.com/uploadfile" \
+        -F "auth=${TOKEN}" \
+        -F "folderid=${FOLDERID}" \
+        -F "progresshash=${PROGRESS_HASH}" \
+        -F "filename=${LOCAL_FILENAME}" \
+        -F "file=@${LOCAL_FILE}" > "${TMPFILE}" &
+    local UPLOAD_PID=$! # on recupère le PID du curl en background
 
     echo "Upload ${LOCAL_FILENAME} : ${PROGRESS_HASH}"
-    #sleep 5 # attendre un peu avant de vérifier la progression
 
+    #sleep 5 # attendre un peu avant de vérifier la progression
     if [[ ${SLEEP_INTERVAL} -eq 0 ]]; then
         #echo "Fichier < 50 Mo, pas de suivi de progression."
         wait ${UPLOAD_PID}
     else
         while kill -0 ${UPLOAD_PID} 2>/dev/null; do
-          local UPLOADPROGRESS="$(curl -fsSL -G "https://eapi.pcloud.com/uploadprogress" \
-            --data-urlencode "auth=$TOKEN" \
-            --data-urlencode "progresshash=$PROGRESS_HASH")"
-
-          local UPR="$(jq -r '.result' <<< "${UPLOADPROGRESS}")"
-
-          if [[ "${UPR}" -eq 1900 ]]; then
-            echo "Suivi du transfert indisponible : ${UPR}"
-          else
-            local TOTAL=$(jq -r '.total' <<< "${UPLOADPROGRESS}")
-            local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
-            local UPLOADED=$(jq -r '.uploaded' <<< "${UPLOADPROGRESS}")
-            local UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
-            local PERCENTAGE=$(( UPLOADED * 100 / TOTAL ))
-            echo "Transfert: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
-          fi
-          sleep "${SLEEP_INTERVAL}"
+            local UPLOADPROGRESS="$(curl -fsSL --resolve "${RESOLVE_ARG}" -G "https://eapi.pcloud.com/uploadprogress" \
+                --data-urlencode "auth=$TOKEN" \
+                --data-urlencode "progresshash=$PROGRESS_HASH")"
+            local UPR="$(jq -r '.result' <<< "${UPLOADPROGRESS}")"
+            if [[ "${UPR}" -eq 1900 ]]; then
+                echo "Suivi du transfert indisponible : ${UPR}"
+            else
+                local TOTAL=$(jq -r '.total' <<< "${UPLOADPROGRESS}")
+                local TOTAL_MB=$(( TOTAL / 1024 / 1024 ))
+                local UPLOADED=$(jq -r '.uploaded' <<< "${UPLOADPROGRESS}")
+                local UPLOADED_MB=$(( UPLOADED / 1024 / 1024 ))
+                local PERCENTAGE=$(( UPLOADED * 100 / TOTAL ))
+                echo "Transfert: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
+            fi
+            sleep "${SLEEP_INTERVAL}"
         done
         wait ${UPLOAD_PID}
     fi
-
     local CURL_EXIT=${?}
     [[ ${CURL_EXIT} -eq 0 ]] || : ${EXCEPTION:?curl a échoué → exit code: ${CURL_EXIT}}
-    
+
     local RESPONSE=$(cat "${TMPFILE}")
     rm -f "$TMPFILE"
 
     local RESULT=$(echo "${RESPONSE}" | jq '.result')
-
     [[ "$RESULT" -eq 0 ]] || {
-      local ERROR=$(echo $RESPONSE | jq -r '.error')
-      cat << EOF
+        local ERROR=$(echo $RESPONSE | jq -r '.error')
+        cat << EOF
 Upload KO → $ERROR
 ---------------------------------
-Code	Description
+Code   Description
 ---------------------------------
-1000	Log in required.
-2000	Log in failed.
-2001	Invalid file/folder name.
-2003	Access denied. You do not have permissions to preform this operation.
-2005	Directory does not exist.
-2008	User is over quota.
-2041	Connection broken.
-4000	Too many login tries from this IP address.
-5000	Internal error. Try again later.
-5001	Internal upload error.
+1000   Log in required.
+2000   Log in failed.
+2001   Invalid file/folder name.
+2003   Access denied. You do not have permissions to preform this operation.
+2005   Directory does not exist.
+2008   User is over quota.
+2041   Connection broken.
+4000   Too many login tries from this IP address.
+5000   Internal error. Try again later.
+5001   Internal upload error.
 EOF
-      return 1
+        return 1
     }
-      
     local FILEID=$( jq -r '.fileids[0]' <<< "${RESPONSE}" )
     echo "Upload OK → fileid: $FILEID"
-
 }
 
 function logout() {
