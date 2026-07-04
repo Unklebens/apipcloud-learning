@@ -31,7 +31,9 @@ pipeline {
         }
         stage('Cleanup') {
             steps {
-                sh 'docker image prune -f'
+                sh '''
+                docker image ls --format "{{.Repository}}:{{.Tag}}" | grep "^pclouduploader:" | xargs -r docker image rm
+                '''
             }
         }
     }
