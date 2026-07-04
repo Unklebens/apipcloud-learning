@@ -38,7 +38,7 @@ function upload() {
     local FILESIZE="$(du -b "${LOCAL_FILE}" | cut -f1)"
     local SLEEP_INTERVAL="$(get_sleep_interval "${FILESIZE}")"
 
-    local PROGRESS_HASH="$(uuidgen)" # hash unique pour suivre la progression de l'upload
+    local PROGRESS_HASH="$(echo "${LOCAL_FILE}" | md5sum | cut -d' ' -f1)" # hash unique pour suivre la progression de l'upload
     local TMPFILE="/tmp/${PROGRESS_HASH}" # fichier temporaire pour stocker la réponse de l'upload
     touch "${TMPFILE}"
 
