@@ -28,7 +28,7 @@ EOF
 chmod 600 ~/.secret/pcloud.env
 ```
 
-Adapter le chemin dans `main.sh` si nécessaire :
+Adapter le chemin dans `entrypoint.sh` si nécessaire :
 
 ```
 ENV_FILE="../homelab/.secret/pcloud.env"
@@ -42,13 +42,13 @@ ENV_FILE="../homelab/.secret/pcloud.env"
 
 ```bash
 # Rendre le script exécutable
-chmod +x main.sh
+chmod +x entrypoint.sh
 
 # Sourcer le fichier d'.env (source en bash mais . ~/.secret/pcloud.env en sh via cron)
 source ~/.secret/pcloud.env 
 
 # Synchroniser un dossier
-./main.sh /chemin/vers/dossier
+./entrypoint.sh /chemin/vers/dossier
 
 ```
 
@@ -88,7 +88,7 @@ chmod +x entypoint.sh
 - Conserve les **3** derniers fichiers du dossier local (tri alphabétique — format `YYYY-MM-DD` requis)
 - Supprime les fichiers présents sur pCloud mais absents de la sélection locale
 - Uploade les fichiers manquants sur pCloud
-- `FOLDERID` à configurer dans `compare.sh`
+- `FOLDERID` à configurer dans `entrypoint.sh`
 
 ## Sync miroir (entypoint.sh) V3
 
@@ -102,20 +102,20 @@ Un dockerfile est disponible pour faire un upload dans un conteneur , les variab
 
 ```bash
 #build the image from inside the repo
-docker build . -t pclouduploader:v0 #<10s
+docker build . -t pclouduploader:"${TAG:-3}" #<10s
 
 docker run --rm \
   -e PCLOUDUSER=$PCLOUDUSER \
   -e PCLOUDPASS=$PCLOUDPASS \
   -v /sourceDirectory:/backups:ro \
-  pclouduploader:v2 \
+  pclouduploader:"${TAG:-3}" \
   /backups
 ```
 
 
 ## Utilisation avec jenkins
 
-je prevois de me service de cette dynamique via Jenkins , un fichier compose est present
+je prevois de me servir de cette dynamique via Jenkins , un fichier compose est present
 
 Pour l'auth Tailscale au premier démarrage si la TSAUTHKEY n'est dans le compose directement:
 

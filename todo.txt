@@ -1,4 +1,0 @@
-Oui, Alpine a md5sum de base sans rien installer :
-bashecho "monFichier.tar.gz" | md5sum | cut -d' ' -f1
-Ça te donne un hash 32 caractères hexadécimaux — largement suffisant comme progresshash unique pour pCloud, et tu économises util-linux dans le Dockerfile.
-
