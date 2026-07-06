@@ -64,6 +64,7 @@ function upload() {
         wait ${UPLOAD_PID}
     else
         while kill -0 ${UPLOAD_PID} 2>/dev/null; do
+            sleep "${SLEEP_INTERVAL}"
             local UPLOADPROGRESS="$(curl -fsSL --resolve "${RESOLVE_ARG}" -G "https://eapi.pcloud.com/uploadprogress" \
                 --data-urlencode "auth=$TOKEN" \
                 --data-urlencode "progresshash=$PROGRESS_HASH")"
@@ -78,7 +79,6 @@ function upload() {
                 local PERCENTAGE=$(( UPLOADED * 100 / TOTAL ))
                 echo "Transfert: ${PERCENTAGE}% (${UPLOADED_MB}/${TOTAL_MB} MB)"
             fi
-            sleep "${SLEEP_INTERVAL}"
         done
         wait ${UPLOAD_PID}
     fi
