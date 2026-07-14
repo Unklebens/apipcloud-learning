@@ -130,8 +130,10 @@ docker exec tailscale tailscale up
 
 Le build est trigger par un webhook qui vient d'un backup en cron ailleurs dans l'infra
 
+JKURL=http(s)://xxx.xxx.ts.net:PORT
+
 CRUMB=$(curl -s -u "user:jenkins_user_token" \
-  "http://jenkins_URL:8080/crumbIssuer/api/json" \
+  "${JKURL}/crumbIssuer/api/json" \
   | jq -r '.crumb')
 
 

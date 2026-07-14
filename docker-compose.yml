@@ -11,13 +11,15 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     volumes:
-      - /home/fahim/docker/jenkins/tailscale-state:/var/lib/tailscale
+      - $HOME/docker/jenkins/tailscale-state:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
       - /etc/localtime:/etc/localtime:ro
+      - $HOME/docker/jenkins/certs:/certs:ro
     environment:
       - "TS_AUTHKEY=<TAILSCALE_AUTH_KEY>"  # Remplacez <TAILSCALE_AUTH_KEY> par votre clé d'authentification Tailscale
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
+      - TS_CERT_DOMAIN=xxx.xxx.ts.net
     network_mode: host                 # tailscale a besoin du réseau host pour fonctionner
     dns:
       - 100.100.100.100 # pour que jenkins puisse résoudre les noms de domaine via Tailscale
@@ -27,14 +29,26 @@ services:
     image: jenkins/jenkins:2.555.3-lts
     container_name: jenkins
     restart: unless-stopped
-    labels:
-      - com.centurylinklabs.watchtower.enable=true
     depends_on:
       - tailscale
     network_mode: service:tailscale    # jenkins partage le réseau de tailscale (pattern sidecar)
     user: root                         # nécessaire pour accès au socket docker si besoin plus tard
     environment:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
+      - JENKINS_OPTS=--sessionTimeout=2880 #2j de timeout
     volumes:
-      - /home/fahim/docker/jenkins/jenkins-data:/var/jenkins_home
+      - $HOME/docker/jenkins/jenkins-data:/var/jenkins_home
+      - /etc/localtime:/etc/localtime:ro
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-jenkins
+    restart: unless-stopped
+    depends_on:
+      - jenkins
+      - tailscale
+    network_mode: service:tailscale
+    volumes:
+      - $HOME/docker/jenkins/nginx.conf:/etc/nginx/conf.d/jenkins.conf:ro
+      - $HOME/docker/jenkins/certs:/certs:ro
       - /etc/localtime:/etc/localtime:ro
