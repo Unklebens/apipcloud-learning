@@ -4,6 +4,7 @@ pipeline {
         string(name: 'LOCAL_PATH', defaultValue: '', description: 'Chemin du dossier local a synchroniser')
         string(name: 'FOLDERID', defaultValue: '', description: 'ID du dossier a remote')
         string(name: 'RETENTION_DAYS', defaultValue: '', description: 'Nombre de jours de conservation')
+        choice choices: ['PCLOUDcreds', 'PCLOUDcreds_fkds'], description: 'account on which the upload will happen', name: 'PCLOUD_ACCOUNT'
     }
     stages {
         stage('Build image') {
@@ -13,7 +14,7 @@ pipeline {
         }
         stage('Push to pcloud') {
             environment {
-                PCLOUDCREDS = credentials('PCLOUDcreds')
+                PCLOUDCREDS = credentials("${params.PCLOUD_ACCOUNT}")
                 FOLDERID = "${params.FOLDERID}"
                 RETENTION_DAYS = "${params.RETENTION_DAYS}"
                 LOCAL_PATH = "${params.LOCAL_PATH}"
