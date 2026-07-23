@@ -10,11 +10,8 @@ pipeline {
     stages {
 
         stage ('Init'){
-            environment {
-                CALLER="${params.callerJob}"
-            }
             steps {
-                script {currentBuild.displayName= "${CALLER}"}
+                script {currentBuild.displayName= "${params.callerJob}"}
             }
         }
 
