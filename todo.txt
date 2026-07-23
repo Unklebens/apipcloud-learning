@@ -1,0 +1,21 @@
+chiffrer
+
+faire remonter depuis le step docker ver jenkins size transféré et quota via bind-montage du workspace depot json et recup JQ
+-v "${WORKSPACE}":/report \
+
+def transferred = sh(
+            script: "jq -r '.transferred' report.json",
+            returnStdout: true
+        ).trim()
+
+        def quotaUsed = sh(
+            script: "jq -r '.quota_used' report.json",
+            returnStdout: true
+        ).trim()
+
+        def quotaTotal = sh(
+            script: "jq -r '.quota_total' report.json",
+            returnStdout: true
+        ).trim()
+
+        currentBuild.description = "Transféré: ${transferred} | Quota: ${quotaUsed}/${quotaTotal}"
