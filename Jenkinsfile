@@ -4,9 +4,20 @@ pipeline {
         string(name: 'LOCAL_PATH', defaultValue: '', description: 'Chemin du dossier local a synchroniser')
         string(name: 'FOLDERID', defaultValue: '', description: 'ID du dossier a remote')
         string(name: 'RETENTION_DAYS', defaultValue: '', description: 'Nombre de jours de conservation')
+        string(name: 'callerJob', defaultValue: 'docker', description: 'job qui a appellé celui ci')
         choice choices: ['PCLOUDcreds', 'PCLOUDcreds_fkds'], description: 'account on which the upload will happen', name: 'PCLOUD_ACCOUNT'
     }
     stages {
+
+        stage ('Init'){
+            environment {
+                CALLER="${params.callerJob}"
+            }
+            steps {
+                script {currentBuild.displayName= "${CALLER}"}
+            }
+        }
+
         stage('Build image') {
             steps {
                 sh 'docker build -t pclouduploader:"${BUILD_NUMBER}" .'
