@@ -29,10 +29,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh '''
-                    echo "WORKSPACE = $WORKSPACE"
-                    ls -la "$WORKSPACE"
-                    docker run --rm \
+                    sh '''docker run --rm \
                     -e PCLOUDUSER="${PCLOUDCREDS_USR}" \
                     -e PCLOUDPASS="${PCLOUDCREDS_PSW}" \
                     -e FOLDERID="${FOLDERID}" \
@@ -40,16 +37,11 @@ pipeline {
                     -v "${LOCAL_PATH}":/backups:ro \
                     -v "${WORKSPACE}":/report \
                     pclouduploader:"${BUILD_NUMBER}" \
-                    /backups
-                    ls -la "$WORKSPACE"
-                    '''
+                    /backups'''
 
-                    if (fileExists('report.json')) {
-                        def transferred = sh(
-                            script: "jq -r '.transfered_mb' transfered.json",
-                            returnStdout: true
-                        ).trim()
+                    currentBuild.description = ""
 
+                    if (fileExists('quota.json')) {
                         def quotaUsed = sh(
                             script: "jq -r '.usedquota_mb' quota.json",
                             returnStdout: true
@@ -60,12 +52,18 @@ pipeline {
                             returnStdout: true
                         ).trim()
 
-                        currentBuild.description = "Transféré: ${transferred} | Quota: ${quotaUsed}/${quotaTotal}"
-                    } else {
-                        currentBuild.description = "Rien à transférer"
+                        currentBuild.description = "Quota: ${quotaUsed}/${quotaTotal} Mo"
+                    }
+
+                    if (fileExists('transfered.json')) {
+                        def transferred = sh(
+                            script: "jq -r '.transfered_mb' transfered.json",
+                            returnStdout: true
+                        ).trim()
+
+                        currentBuild.description = "Transféré: ${transferred} Mo  ${currentBuild.description}"
                     }
                 }
-                
             }
         }
         stage('Cleanup') {
@@ -76,9 +74,9 @@ pipeline {
             }
         }
     }
-    // post {
-    //     always {
-    //         cleanWs notFailBuild: true
-    //     }
-    // }
+    post {
+        always {
+            cleanWs notFailBuild: true
+        }
+    }
 }

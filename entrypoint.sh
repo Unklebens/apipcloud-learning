@@ -64,4 +64,3 @@ fi
 get_quota json
 list_folder
 logout
-cat ${JSON_FILE}
