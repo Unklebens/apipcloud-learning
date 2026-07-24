@@ -42,17 +42,17 @@ pipeline {
 
                     if (fileExists('report.json')) {
                         def transferred = sh(
-                            script: "jq -r '.transferred' report.json",
+                            script: "jq -r '.transfered_mb' report.json",
                             returnStdout: true
                         ).trim()
 
                         def quotaUsed = sh(
-                            script: "jq -r '.quota_used' report.json",
+                            script: "jq -r '.usedquota_mb' report.json",
                             returnStdout: true
                         ).trim()
 
                         def quotaTotal = sh(
-                            script: "jq -r '.quota_total' report.json",
+                            script: "jq -r '.quota_mb' report.json",
                             returnStdout: true
                         ).trim()
 
@@ -72,9 +72,9 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-            cleanWs notFailBuild: true
-        }
-    }
+    // post {
+    //     always {
+    //         cleanWs notFailBuild: true
+    //     }
+    // }
 }
