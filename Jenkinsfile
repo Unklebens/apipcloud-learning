@@ -28,7 +28,8 @@ pipeline {
                 LOCAL_PATH = "${params.LOCAL_PATH}"
             }
             steps {
-                sh '''docker run --rm \
+                script {
+                    sh '''docker run --rm \
                     -e PCLOUDUSER="${PCLOUDCREDS_USR}" \
                     -e PCLOUDPASS="${PCLOUDCREDS_PSW}" \
                     -e FOLDERID="${FOLDERID}" \
@@ -55,6 +56,8 @@ pipeline {
                     ).trim()
 
                     currentBuild.description = "Transféré: ${transferred} | Quota: ${quotaUsed}/${quotaTotal}"
+                }
+                
             }
         }
         stage('Cleanup') {
