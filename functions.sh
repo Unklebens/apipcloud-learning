@@ -141,14 +141,10 @@ function get_quota() {
     # Écrire le JSON uniquement si l'argument vaut "json"
     if [[ "$1" == "json" ]]; then 
         jq -n \
-            --argjson usedquota_mb "${USEDQUOTA_MB}" \
-            --argjson quota_mb "${QUOTA_MB}" \
-            '. + {
-                  usedquota_mb: $usedquota_mb, 
-                  quota_mb: $quota_mb
-                  }' \
-            "${JSON_FILE}" > "${JSON_FILE}.tmp" \
-            && mv "${JSON_FILE}.tmp" "$JSON_FILE"
+            --argjson usedquota_mb "$USEDQUOTA_MB" \
+            --argjson quota_mb "$QUOTA_MB" \
+            '{usedquota_mb: $usedquota_mb, quota_mb: $quota_mb}' \
+            > /report/quota.json
     fi
 }
 
@@ -259,7 +255,7 @@ function multiple_upload(){
   jq -n \
     --argjson transfered_mb "$TRANSFERED_MB" \
     '{transfered_mb: $transfered_mb}' \
-    > "${JSON_FILE}"
+    > /report/transfered.json
 
   if [[ ${#FAIL_FILES[@]} -gt 0 ]]; then
     echo "Fichiers échoués :"

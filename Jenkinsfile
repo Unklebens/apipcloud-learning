@@ -37,7 +37,6 @@ pipeline {
                     -e PCLOUDPASS="${PCLOUDCREDS_PSW}" \
                     -e FOLDERID="${FOLDERID}" \
                     -e RETENTION_DAYS="${RETENTION_DAYS}" \
-                    -e JSON_FILE=/report/report.json \
                     -v "${LOCAL_PATH}":/backups:ro \
                     -v "${WORKSPACE}":/report \
                     pclouduploader:"${BUILD_NUMBER}" \
@@ -47,17 +46,17 @@ pipeline {
 
                     if (fileExists('report.json')) {
                         def transferred = sh(
-                            script: "jq -r '.transfered_mb' report.json",
+                            script: "jq -r '.transfered_mb' transfered.json",
                             returnStdout: true
                         ).trim()
 
                         def quotaUsed = sh(
-                            script: "jq -r '.usedquota_mb' report.json",
+                            script: "jq -r '.usedquota_mb' quota.json",
                             returnStdout: true
                         ).trim()
 
                         def quotaTotal = sh(
-                            script: "jq -r '.quota_mb' report.json",
+                            script: "jq -r '.quota_mb' quota.json",
                             returnStdout: true
                         ).trim()
 

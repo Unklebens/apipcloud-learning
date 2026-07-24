@@ -9,7 +9,7 @@ source functions.sh || : ${EXCEPTION:?"functions.sh: illisible ou absent"}
 
 : ${PCLOUDUSER:?variable non definie}  # vérifie après le source, peu importe d'où vient la variable
 : ${PCLOUDPASS:?variable non definie}
-: ${JSON_FILE:?variable non definie}
+
 : ${FOLDERID:?FOLDERID doit être défini} #<-- dossier de destination sur pCloud
 echo "Dossier de destination sur pCloud: ${FOLDERID}"
 
