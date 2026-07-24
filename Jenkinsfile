@@ -40,22 +40,26 @@ pipeline {
                     pclouduploader:"${BUILD_NUMBER}" \
                     /backups'''
 
-                    def transferred = sh(
-                        script: "jq -r '.transferred' report.json",
-                        returnStdout: true
-                    ).trim()
+                    if (fileExists('report.json')) {
+                        def transferred = sh(
+                            script: "jq -r '.transferred' report.json",
+                            returnStdout: true
+                        ).trim()
 
-                    def quotaUsed = sh(
-                        script: "jq -r '.quota_used' report.json",
-                        returnStdout: true
-                    ).trim()
+                        def quotaUsed = sh(
+                            script: "jq -r '.quota_used' report.json",
+                            returnStdout: true
+                        ).trim()
 
-                    def quotaTotal = sh(
-                        script: "jq -r '.quota_total' report.json",
-                        returnStdout: true
-                    ).trim()
+                        def quotaTotal = sh(
+                            script: "jq -r '.quota_total' report.json",
+                            returnStdout: true
+                        ).trim()
 
-                    currentBuild.description = "Transféré: ${transferred} | Quota: ${quotaUsed}/${quotaTotal}"
+                        currentBuild.description = "Transféré: ${transferred} | Quota: ${quotaUsed}/${quotaTotal}"
+                    } else {
+                        currentBuild.description = "Rien à transférer"
+                    }
                 }
                 
             }
