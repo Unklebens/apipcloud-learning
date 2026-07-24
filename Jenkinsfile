@@ -29,7 +29,10 @@ pipeline {
             }
             steps {
                 script {
-                    sh '''docker run --rm \
+                    sh '''
+                    echo "WORKSPACE = $WORKSPACE"
+                    ls -la "$WORKSPACE"
+                    docker run --rm \
                     -e PCLOUDUSER="${PCLOUDCREDS_USR}" \
                     -e PCLOUDPASS="${PCLOUDCREDS_PSW}" \
                     -e FOLDERID="${FOLDERID}" \
@@ -38,7 +41,9 @@ pipeline {
                     -v "${LOCAL_PATH}":/backups:ro \
                     -v "${WORKSPACE}":/report \
                     pclouduploader:"${BUILD_NUMBER}" \
-                    /backups'''
+                    /backups
+                    ls -la "$WORKSPACE"
+                    '''
 
                     if (fileExists('report.json')) {
                         def transferred = sh(
