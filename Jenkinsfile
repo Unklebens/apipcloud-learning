@@ -33,7 +33,9 @@ pipeline {
                     -e PCLOUDPASS="${PCLOUDCREDS_PSW}" \
                     -e FOLDERID="${FOLDERID}" \
                     -e RETENTION_DAYS="${RETENTION_DAYS}" \
+                    -e JSON_FILE=/report/quota.json
                     -v "${LOCAL_PATH}":/backups:ro \
+                    -v "${WORKSPACE}":/report \
                     pclouduploader:"${BUILD_NUMBER}" \
                     /backups'''
             }

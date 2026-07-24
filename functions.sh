@@ -128,14 +128,25 @@ function logout() {
 function get_quota() {
 
     local USERINFO="$(curl -fsSlG "https://eapi.pcloud.com/userinfo" \
-    --data-urlencode "auth=${TOKEN:?Non defini}")"
+        --data-urlencode "auth=${TOKEN:?Non defini}")"
+
     local QUOTA="$(jq '.quota' <<< "${USERINFO}")"
     local USEDQUOTA="$(jq '.usedquota' <<< "${USERINFO}")"
-    FREEQUOTA=$(( QUOTA - USEDQUOTA )) #pas local car on s'en sert dans main.sh
+    FREEQUOTA=$(( QUOTA - USEDQUOTA ))
     local FREEQUOTA_MB=$(( FREEQUOTA / 1024 / 1024 ))
     local QUOTA_MB=$(( QUOTA / 1024 / 1024 ))
     local USEDQUOTA_MB=$(( USEDQUOTA / 1024 / 1024 ))
     echo "Quota: ${USEDQUOTA_MB}/${QUOTA_MB} MB utilisés, ${FREEQUOTA_MB} MB libre"
+
+    # Écrire le JSON uniquement si l'argument vaut "json"
+    if [[ "$1" == "json" ]]; then
+        : ${JSON_FILE:?variable non definie} 
+        jq -n \
+            --argjson usedquota_mb "$USEDQUOTA_MB" \
+            --argjson quota_mb "$QUOTA_MB" \
+            '{usedquota_mb: $usedquota_mb, quota_mb: $quota_mb}' \
+            > "$JSON_FILE"
+    fi
 }
 
 function list_folder() {

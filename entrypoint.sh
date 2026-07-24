@@ -61,6 +61,6 @@ else
     multiple_upload "${FILESTOUPLOAD[@]}"
 fi
 
-get_quota
+get_quota json
 list_folder
 logout
