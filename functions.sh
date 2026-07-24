@@ -139,13 +139,16 @@ function get_quota() {
     echo "Quota: ${USEDQUOTA_MB}/${QUOTA_MB} MB utilisés, ${FREEQUOTA_MB} MB libre"
 
     # Écrire le JSON uniquement si l'argument vaut "json"
-    if [[ "$1" == "json" ]]; then
-        : ${JSON_FILE:?variable non definie} 
+    if [[ "$1" == "json" ]]; then 
         jq -n \
-            --argjson usedquota_mb "$USEDQUOTA_MB" \
-            --argjson quota_mb "$QUOTA_MB" \
-            '{usedquota_mb: $usedquota_mb, quota_mb: $quota_mb}' \
-            > "$JSON_FILE"
+            --argjson usedquota_mb "${USEDQUOTA_MB}" \
+            --argjson quota_mb "${QUOTA_MB}" \
+            '. + {
+                  usedquota_mb: $usedquota_mb, 
+                  quota_mb: $quota_mb
+                  }' \
+            "${JSON_FILE}" > "${JSON_FILE}.tmp" \
+            && mv "${JSON_FILE}.tmp" "$JSON_FILE"
     fi
 }
 
@@ -227,7 +230,7 @@ function multiple_upload(){
   TOTAL=${#EFFECTIVE_FILES[@]}
   COUNT=0
   SUCCESS_FILES=()
-
+  TRANSFERED=0
   # Étape 2 : upload des fichiers valides uniquement
   for f in "${EFFECTIVE_FILES[@]}"; do
     COUNT=$((COUNT + 1))
@@ -243,6 +246,7 @@ function multiple_upload(){
     if [[ ${?} -eq 0 ]]; then
       SUCCESS_FILES+=("${f}")
       FREEQUOTA=$(( FREEQUOTA - FILESIZE ))
+      TRANSFERED=$(( TRANSFERED + FILESIZE ))
     else
       echo "Le fichier ${f} a échoué. Fichier ignoré."
       FAIL_FILES+=("${f}")
@@ -250,6 +254,12 @@ function multiple_upload(){
   done
 
   echo "Upload terminé : ${#SUCCESS_FILES[@]} réussi(s), ${#FAIL_FILES[@]} échoué(s)"
+
+  local TRANSFERED_MB=$(( TRANSFERED / 1024 / 1024 ))
+  jq -n \
+    --argjson transfered_mb "$TRANSFERED_MB" \
+    '{transfered_mb: $transfered_mb}' \
+    > "${JSON_FILE}"
 
   if [[ ${#FAIL_FILES[@]} -gt 0 ]]; then
     echo "Fichiers échoués :"

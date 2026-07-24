@@ -33,11 +33,28 @@ pipeline {
                     -e PCLOUDPASS="${PCLOUDCREDS_PSW}" \
                     -e FOLDERID="${FOLDERID}" \
                     -e RETENTION_DAYS="${RETENTION_DAYS}" \
-                    -e JSON_FILE=/report/quota.json
+                    -e JSON_FILE=/report/report.json
                     -v "${LOCAL_PATH}":/backups:ro \
                     -v "${WORKSPACE}":/report \
                     pclouduploader:"${BUILD_NUMBER}" \
                     /backups'''
+
+                    def transferred = sh(
+                        script: "jq -r '.transferred' report.json",
+                        returnStdout: true
+                    ).trim()
+
+                    def quotaUsed = sh(
+                        script: "jq -r '.quota_used' report.json",
+                        returnStdout: true
+                    ).trim()
+
+                    def quotaTotal = sh(
+                        script: "jq -r '.quota_total' report.json",
+                        returnStdout: true
+                    ).trim()
+
+                    currentBuild.description = "Transféré: ${transferred} | Quota: ${quotaUsed}/${quotaTotal}"
             }
         }
         stage('Cleanup') {
@@ -46,6 +63,11 @@ pipeline {
                 docker image ls --format "{{.Repository}}:{{.Tag}}" | grep "^pclouduploader:" | xargs -r docker image rm
                 '''
             }
+        }
+    }
+    post {
+        always {
+            cleanWs notFailBuild: true
         }
     }
 }
