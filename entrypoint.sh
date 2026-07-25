@@ -64,3 +64,5 @@ fi
 get_quota json
 list_folder
 logout
+ls *.json
+cat *.json
