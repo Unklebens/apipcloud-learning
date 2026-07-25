@@ -62,5 +62,4 @@ fi
 get_quota json
 list_folder
 logout
-ls -lA /report/
 cat /report/*.json
