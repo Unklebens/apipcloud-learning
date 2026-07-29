@@ -169,3 +169,18 @@ pcloud-backup/
 - [x] Containerisation avec `alpine`
 - [x] POC cron sur dockerhost 
 - [x] Pipeline Jenkins
+
+
+### side note regarding user:pass auth
+
+if you were to change public ip after heving the same one for a long time you will face this error when calling method `login`
+
+```json
+{
+        "result": 1022,
+        "error": "Please provide 'code'."
+}
+
+to fix this login using a web broser from your new publicIP you will receive a OTP via e-mail and your new public IP will be 'whitelisted'
+
+Obviously OAuth implementation will not give such result when changin publicIP so OAuth workflow is to be preferred
