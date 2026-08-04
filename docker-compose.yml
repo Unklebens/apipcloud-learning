@@ -3,27 +3,30 @@ services:
   tailscale:
     image: tailscale/tailscale:latest
     container_name: tailscale
-    hostname: jenkins-ubuntu104        # nom qui apparaitra dans le dashboard Tailscale
+    hostname: jenkins-ubuntu104 #nom de machine dans console tailscale
     restart: unless-stopped
     labels:
-      - com.centurylinklabs.watchtower.enable=true #utili si nickfedor/watchtower est deployé
+      - com.centurylinklabs.watchtower.enable=true #autoupdate par nickfedor/watchtower
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
     volumes:
-      - $HOME/docker/jenkins/tailscale-state:/var/lib/tailscale
+      - ${HOME}/jenkins/tailscale-state:/var/lib/tailscale
       - /dev/net/tun:/dev/net/tun
       - /etc/localtime:/etc/localtime:ro
-      - $HOME/docker/jenkins/certs:/certs:ro
+      - ${HOME}/jenkins/certs:/certs
     environment:
-      - "TS_AUTHKEY=<TAILSCALE_AUTH_KEY>"  # Remplacez <TAILSCALE_AUTH_KEY> par votre clé d'authentification Tailscale
+      - "TS_AUTHKEY=<TAILSCALE_AUTH_KEY>" #<----- Remplacez <TAILSCALE_AUTH_KEY> par votre clé d'authentification Tailscale
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
-      - TS_CERT_DOMAIN=xxx.xxx.ts.net
-    network_mode: host                 # tailscale a besoin du réseau host pour fonctionner
+      - TS_CERT_DOMAIN=jenkins-ubuntu104.tail358360.ts.net
     dns:
       - 100.100.100.100 # pour que jenkins puisse résoudre les noms de domaine via Tailscale
       - 1.1.1.1
+    networks:
+      - jenkins-net
+    # plus de network_mode: host, plus de ports: exposés
+    # le netns du container est désormais isolé, seul le mesh tailscale y accède
 
   jenkins:
     image: jenkins/jenkins:2.555.3-lts
@@ -31,13 +34,13 @@ services:
     restart: unless-stopped
     depends_on:
       - tailscale
-    network_mode: service:tailscale    # jenkins partage le réseau de tailscale (pattern sidecar)
-    user: root                         # nécessaire pour accès au socket docker si besoin plus tard
+    network_mode: service:tailscale   # rejoint le netns isolé de tailscale, inchangé
+    user: root
     environment:
-      - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
-      - JENKINS_OPTS=--sessionTimeout=2880 #2j de timeout
+      - JENKINS_OPTS=--sessionTimeout=2880
+      - JAVA_OPTS=-Dorg.apache.commons.jelly.tags.fmt.timeZone=Europe/Paris -Djenkins.install.runSetupWizard=true #arg wizard au premier boot
     volumes:
-      - $HOME/docker/jenkins/jenkins-data:/var/jenkins_home
+      - ${HOME}/jenkins/jenkins-data:/var/jenkins_home
       - /etc/localtime:/etc/localtime:ro
 
   nginx:
@@ -49,6 +52,10 @@ services:
       - tailscale
     network_mode: service:tailscale
     volumes:
-      - $HOME/docker/jenkins/nginx.conf:/etc/nginx/conf.d/jenkins.conf:ro
-      - $HOME/docker/jenkins/certs:/certs:ro
+      - ${HOME}/jenkins/nginx.conf:/etc/nginx/conf.d/jenkins.conf:ro
+      - ${HOME}/jenkins/certs:/certs:ro
       - /etc/localtime:/etc/localtime:ro
+
+networks:
+  jenkins-net:
+    driver: bridge
