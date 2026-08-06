@@ -204,7 +204,7 @@ function empty_trash() {
       : ${EXCEPTION:?Empty trash failed → result: $RESULTTRASH | $ERROR}
     }
 
-    [[ "${RESULTTRASH}" -eq 0 ]] && echo "Corbeille vidée avec succès."
+    [[ "${RESULTTRASH}" -eq 0 ]] && echo "Corbeille vidée avec succès." && sleep 2
 
 }
 
