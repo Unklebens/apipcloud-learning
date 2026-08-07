@@ -29,7 +29,7 @@ services:
     # le netns du container est désormais isolé, seul le mesh tailscale y accède
 
   jenkins:
-    image: jenkins/jenkins:2.555.3-lts
+    image: jenkins/jenkins:2.568.2-lts
     container_name: jenkins
     restart: unless-stopped
     depends_on:
