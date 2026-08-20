@@ -38,7 +38,7 @@ services:
     user: root
     environment:
       - JENKINS_OPTS=--sessionTimeout=2880
-      - JAVA_OPTS=-Dorg.apache.commons.jelly.tags.fmt.timeZone=Europe/Paris -Djenkins.install.runSetupWizard=true #arg wizard au premier boot
+      - JAVA_OPTS=-Dorg.apache.commons.jelly.tags.fmt.timeZone=Europe/Paris -Dsun.net.inetaddr.ttl=0 -Dsun.net.inetaddr.negative.ttl=0 -Djava.net.preferIPv4Stack=true -Dnetworkaddress.cache.ttl=0 -Dnetworkaddress.cache.negative.ttl=0 -Dsun.net.spi.nameservice.nameservers=100.100.100.100 -Dsun.net.spi.nameservice.provider.1=dns,sun
     volumes:
       - ${HOME}/jenkins/jenkins-data:/var/jenkins_home
       - /etc/localtime:/etc/localtime:ro
