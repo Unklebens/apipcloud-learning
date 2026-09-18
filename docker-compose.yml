@@ -5,6 +5,12 @@ services:
     container_name: tailscale
     hostname: jenkins-ubuntu104 #nom de machine dans console tailscale
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "tailscale", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     labels:
       - com.centurylinklabs.watchtower.enable=true #autoupdate par nickfedor/watchtower
     cap_add:
@@ -33,7 +39,9 @@ services:
     container_name: jenkins
     restart: unless-stopped
     depends_on:
-      - tailscale
+      tailscale: 
+        condition: service_healthy # Jenkins redémarre automatiquement si tailscale healthcheck OK plus robuste que service_started , comme liveness/readyness K8S vivant et fonctionnel c different
+        restart: true
     network_mode: service:tailscale   # rejoint le netns isolé de tailscale, inchangé
     user: root
     environment:
@@ -48,8 +56,11 @@ services:
     container_name: nginx-jenkins
     restart: unless-stopped
     depends_on:
-      - jenkins
-      - tailscale
+      jenkins:
+        condition: service_started
+      tailscale: 
+        condition: service_healthy # plus robuste que service_started , comme liveness/readyness K8S vivant et fonctionnel c different
+        restart: true
     network_mode: service:tailscale
     volumes:
       - ${HOME}/jenkins/nginx.conf:/etc/nginx/conf.d/jenkins.conf:ro
