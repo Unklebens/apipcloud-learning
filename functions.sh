@@ -263,4 +263,11 @@ function multiple_upload(){
       echo "  - $f"
     done
   fi
+  # Rien n'a pu être uploadé -> on remonte l'échec
+  if [[ ${#SUCCESS_FILES[@]} -eq 0 && ${#FAIL_FILES[@]} -gt 0 ]]; then
+    echo "Aucun fichier uploadé avec succès." >&2
+    return 1
+  fi
+
+  return 0
 }

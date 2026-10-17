@@ -56,13 +56,17 @@ fi
 
 readarray -t FILESTOUPLOAD < <(comm -23  local remote | sed "s|^|${1}/|")
 
+UPLOAD_RC=0
+
 if [[ ${#FILESTOUPLOAD[@]} -eq 0 ]]; then
     echo "Rien a uploader."
 else
-    multiple_upload "${FILESTOUPLOAD[@]}"
+    multiple_upload "${FILESTOUPLOAD[@]}" || UPLOAD_RC=$?
 fi
 
 get_quota json
 list_folder
 logout
 cat /report/*.json
+
+exit "${UPLOAD_RC}"
