@@ -62,9 +62,9 @@ pipeline {
                         ).trim()
                         def display = (transferred == '0') ? '< 1' : transferred
 
-                            
-                        }
                         currentBuild.description = "Transféré: ${display} Mo  ${currentBuild.description}"
+                        }
+                        
                     }
                 }
             }
