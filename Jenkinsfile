@@ -68,7 +68,6 @@ pipeline {
                     }
                 }
             }
-        }
         stage('Cleanup') {
             steps {
                 sh '''
@@ -82,4 +81,4 @@ pipeline {
             cleanWs notFailBuild: true
         }
     }
-
+}
