@@ -60,8 +60,11 @@ pipeline {
                             script: "jq -r '.transfered_mb' transfered.json",
                             returnStdout: true
                         ).trim()
+                        def display = (transferred == '0') ? '< 1' : transferred
 
-                        currentBuild.description = "Transféré: ${transferred} Mo  ${currentBuild.description}"
+                            
+                        }
+                        currentBuild.description = "Transféré: ${display} Mo  ${currentBuild.description}"
                     }
                 }
             }
@@ -79,4 +82,4 @@ pipeline {
             cleanWs notFailBuild: true
         }
     }
-}
+
