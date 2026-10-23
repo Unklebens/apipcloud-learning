@@ -60,7 +60,7 @@ pipeline {
                             script: "jq -r '.transfered_mb' transfered.json",
                             returnStdout: true
                         ).trim()
-                        def display = (transferred == '0') ? '< 1' : transferred
+                        def display = (transferred == '0') ? '<1' : transferred
 
                         currentBuild.description = "Transféré: ${display} Mo  ${currentBuild.description}"
                         }
